@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace LEGACY.Utils
+namespace ExtraObjectiveSetup.Utils
 {
     public class Vec3
     {
