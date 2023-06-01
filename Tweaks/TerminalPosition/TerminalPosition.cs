@@ -3,7 +3,7 @@ using ExtraObjectiveSetup.BaseClasses;
 
 namespace ExtraObjectiveSetup.Tweaks.TerminalPosition
 {
-    public class TerminalPosition: BaseDefinition
+    public class TerminalPosition: BaseInstanceDefinition
     {
         public Vec3 Position { get; set; } = new();
 

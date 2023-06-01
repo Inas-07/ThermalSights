@@ -58,7 +58,7 @@ namespace ExtraObjectiveSetup.Objectives.TerminalUplink
         public float TimeToRestoreFromFail { set; get; } = 6f;
     }
 
-    public class UplinkDefinition : BaseDefinition
+    public class UplinkDefinition : BaseInstanceDefinition
     {
         public bool DisplayUplinkWarning { get; set; } = true;
 

@@ -8,13 +8,13 @@ using ExtraObjectiveSetup.BaseClasses;
 
 namespace ExtraObjectiveSetup.Objectives.ActivateSmallHSU
 {
-    internal sealed class HSUActivatorObjectiveManager : DefinitionManager<HSUActivatorDefinition>
+    internal sealed class HSUActivatorObjectiveManager : InstanceDefinitionManager<HSUActivatorDefinition>
     {
         public static readonly HSUActivatorObjectiveManager Current = new();
 
         protected override string DEFINITION_NAME { get; } = "ActivateSmallHSU";
 
-        protected override void AddDefinitions(DefinitionsForLevel<HSUActivatorDefinition> definitions)
+        protected override void AddDefinitions(InstanceDefinitionsForLevel<HSUActivatorDefinition> definitions)
         {
             // because we have chained puzzles, sorting is necessary to preserve chained puzzle instance order.
             Sort(definitions);

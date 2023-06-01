@@ -15,7 +15,7 @@ namespace ExtraObjectiveSetup.BaseClasses
     /// Enables live edit of definitions.
     /// </summary>
     /// <typeparam name="T"> Common base class of objective definition. </typeparam>
-    public abstract class DefinitionManager<T> where T : BaseDefinition, new()
+    public abstract class InstanceDefinitionManager<T> where T : BaseInstanceDefinition, new()
     {
         /// <summary>
         /// Path to the common parent folder of ALL definitions 
@@ -26,7 +26,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// Definitions holder. Hold all definitions of this type (the generic type T) for the loaded rundown(s) (or, to be more specific, profile).
         /// Subclasses should not modify its contents, except properies with [JsonIgnore] attribute.
         /// </summary>
-        protected Dictionary<uint, DefinitionsForLevel<T>> definitions = new();
+        protected Dictionary<uint, InstanceDefinitionsForLevel<T>> definitions = new();
 
         /// <summary>
         /// LiveEditListener to enable live edit for this definition.
@@ -47,7 +47,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// <summary>
         /// Utility method. Sort definitions by dimension index, layer type, local index and instance index.
         /// </summary>
-        protected void Sort(DefinitionsForLevel<T> levelDefs)
+        protected void Sort(InstanceDefinitionsForLevel<T> levelDefs)
         {
             levelDefs.Definitions.Sort((u1, u2) =>
             {
@@ -63,7 +63,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// Add objective definitions for a level.
         /// </summary>
         /// <param name="definitions">definitions of a level to be added</param>
-        protected virtual void AddDefinitions(DefinitionsForLevel<T> definitions)
+        protected virtual void AddDefinitions(InstanceDefinitionsForLevel<T> definitions)
         {
             if (definitions == null) return;
 
@@ -85,7 +85,7 @@ namespace ExtraObjectiveSetup.BaseClasses
             EOSLogger.Warning($"LiveEdit File Changed: {e.FullPath}");
             LiveEdit.TryReadFileContent(e.FullPath, (content) =>
             {
-                DefinitionsForLevel<T> conf = Json.Deserialize<DefinitionsForLevel<T>>(content);
+                InstanceDefinitionsForLevel<T> conf = Json.Deserialize<InstanceDefinitionsForLevel<T>>(content);
                 AddDefinitions(conf);
             });
         }
@@ -114,7 +114,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// </summary>
         public virtual void Init() { }
 
-        protected DefinitionManager()
+        protected InstanceDefinitionManager()
         {
             if (!Directory.Exists(PLUGIN_CUSTOM_FOLDER))
             {
@@ -127,7 +127,7 @@ namespace ExtraObjectiveSetup.BaseClasses
             {
                 Directory.CreateDirectory(DEFINITION_PATH);
                 var file = File.CreateText(Path.Combine(DEFINITION_PATH, "Template.json"));
-                file.WriteLine(Json.Serialize(new DefinitionsForLevel<T>()));
+                file.WriteLine(Json.Serialize(new InstanceDefinitionsForLevel<T>()));
                 file.Flush();
                 file.Close();
             }
@@ -135,7 +135,7 @@ namespace ExtraObjectiveSetup.BaseClasses
             foreach (string confFile in Directory.EnumerateFiles(DEFINITION_PATH, "*.json", SearchOption.AllDirectories))
             {
                 string content = File.ReadAllText(confFile);
-                DefinitionsForLevel<T> conf = Json.Deserialize<DefinitionsForLevel<T>>(content);
+                InstanceDefinitionsForLevel<T> conf = Json.Deserialize<InstanceDefinitionsForLevel<T>>(content);
 
                 AddDefinitions(conf);
             }
@@ -144,6 +144,6 @@ namespace ExtraObjectiveSetup.BaseClasses
             liveEditListener.FileChanged += FileChanged;
         }
 
-        static DefinitionManager() { }
+        static InstanceDefinitionManager() { }
     }
 }

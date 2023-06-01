@@ -2,7 +2,7 @@
 
 namespace ExtraObjectiveSetup.Tweaks.TerminalPosition
 {
-    internal class TerminalPositionOverrideManager: DefinitionManager<TerminalPosition>
+    internal class TerminalPositionOverrideManager: InstanceDefinitionManager<TerminalPosition>
     {
         public static TerminalPositionOverrideManager Current = new();
 

@@ -7,7 +7,7 @@ using ExtraObjectiveSetup.BaseClasses;
 
 namespace ExtraObjectiveSetup.Objectives.ActivateSmallHSU
 {
-    public class HSUActivatorDefinition: BaseDefinition
+    public class HSUActivatorDefinition: BaseInstanceDefinition
     { 
         public List<WardenObjectiveEventData> EventsOnHSUActivation { get; set; } = new();
 

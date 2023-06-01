@@ -12,7 +12,7 @@ using ExtraObjectiveSetup.BaseClasses;
 
 namespace ExtraObjectiveSetup.Objectives.TerminalUplink
 {
-    internal sealed class UplinkObjectiveManager: DefinitionManager<UplinkDefinition>
+    internal sealed class UplinkObjectiveManager: InstanceDefinitionManager<UplinkDefinition>
     {
         public static readonly UplinkObjectiveManager Current = new();
 
@@ -20,7 +20,7 @@ namespace ExtraObjectiveSetup.Objectives.TerminalUplink
 
         protected override string DEFINITION_NAME { get; } = "TerminalUplink";
 
-        protected override void AddDefinitions(DefinitionsForLevel<UplinkDefinition> definitions)
+        protected override void AddDefinitions(InstanceDefinitionsForLevel<UplinkDefinition> definitions)
         {
             // because we have chained puzzles, sorting is necessary to preserve chained puzzle instance order.
             Sort(definitions);

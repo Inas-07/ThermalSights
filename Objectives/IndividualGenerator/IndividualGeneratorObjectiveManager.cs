@@ -2,7 +2,7 @@
 
 namespace ExtraObjectiveSetup.Objectives.IndividualGenerator
 {
-    internal sealed class IndividualGeneratorObjectiveManager : DefinitionManager<IndividualGenerator>
+    internal sealed class IndividualGeneratorObjectiveManager : InstanceDefinitionManager<IndividualGenerator>
     {
         public static readonly IndividualGeneratorObjectiveManager Current = new();
 

@@ -7,7 +7,7 @@ using ExtraObjectiveSetup.BaseClasses;
 
 namespace ExtraObjectiveSetup.Objectives.GeneratorCluster
 {
-    internal sealed class GeneratorClusterObjectiveManager : DefinitionManager<GeneratorClusterDefinition>
+    internal sealed class GeneratorClusterObjectiveManager : InstanceDefinitionManager<GeneratorClusterDefinition>
     {
         public static readonly GeneratorClusterObjectiveManager Current = new();
 
@@ -15,7 +15,7 @@ namespace ExtraObjectiveSetup.Objectives.GeneratorCluster
 
         private List<(LG_PowerGeneratorCluster, GeneratorClusterDefinition)> chainedPuzzleToBuild = new();
 
-        protected override void AddDefinitions(DefinitionsForLevel<GeneratorClusterDefinition> definitions)
+        protected override void AddDefinitions(InstanceDefinitionsForLevel<GeneratorClusterDefinition> definitions)
         {
             // because we have chained puzzles, sorting is necessary to preserve chained puzzle instance order.
             Sort(definitions);

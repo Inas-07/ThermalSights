@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace ExtraObjectiveSetup.BaseClasses
 {
-    public class BaseDefinition
+    public class GlobalZoneIndex 
     {
         [JsonPropertyOrder(-2)] // prioritize base class property
         public eDimensionIndex DimensionIndex { get; set; }
@@ -16,16 +16,20 @@ namespace ExtraObjectiveSetup.BaseClasses
         [JsonPropertyOrder(-2)]
         public eLocalZoneIndex LocalIndex { get; set; }
 
+        public (eDimensionIndex, LG_LayerType, eLocalZoneIndex) ToGlobalZoneIndexTuple() => (DimensionIndex, LayerType, LocalIndex);
+    
+        public override string ToString() => $"{ToGlobalZoneIndexTuple}";
+    }
+
+    public class BaseInstanceDefinition: GlobalZoneIndex
+    {
         [JsonPropertyOrder(-2)]
         public uint InstanceIndex { get; set; } = uint.MaxValue;
 
-        public (eDimensionIndex, LG_LayerType, eLocalZoneIndex) GlobalZoneIndex => (DimensionIndex, LayerType, LocalIndex);
-
-        public override string ToString() => $"{GlobalZoneIndex}, Instance_{InstanceIndex}";
+        public override string ToString() => $"{ToGlobalZoneIndexTuple()}, Instance_{InstanceIndex}";
     }
 
-
-    public class DefinitionsForLevel<T> where T : BaseDefinition, new()
+    public class InstanceDefinitionsForLevel<T> where T : BaseInstanceDefinition, new()
     {
         public uint MainLevelLayout { set; get; } = 0;
 

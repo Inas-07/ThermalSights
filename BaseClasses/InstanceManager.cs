@@ -13,6 +13,12 @@ namespace ExtraObjectiveSetup.BaseClasses
 
         public const uint INVALID_INSTANCE_INDEX = uint.MaxValue;
 
+        /// <summary>
+        /// Register the instance to this instance manager.
+        /// </summary>
+        /// <param name="globalZoneIndex">Spawn node of the zone</param>
+        /// <param name="instance">instance to register</param>
+        /// <returns>The zone instance index, or INVALID_INSTANCE_INDEX if instance is null.</returns>
         public virtual uint Register((eDimensionIndex, LG_LayerType, eLocalZoneIndex) globalZoneIndex, T instance)
         {
             if (instance == null) return INVALID_INSTANCE_INDEX;
@@ -46,6 +52,12 @@ namespace ExtraObjectiveSetup.BaseClasses
             return instanceIndex;
         }
 
+        /// <summary>
+        /// Register the instance to this instance manager. 
+        /// GlobalZoneIndex of the instance will be automatically fetched from SpawnNode reference if the instance.
+        /// </summary>
+        /// <param name="instance">instance to register</param>
+        /// <returns>The zone instance index, or INVALID_INSTANCE_INDEX if instance is null.</returns>
         public virtual uint Register(T instance) => Register(GetGlobalZoneIndex(instance), instance);
 
         /// <summary>
@@ -64,6 +76,12 @@ namespace ExtraObjectiveSetup.BaseClasses
             return zoneInstanceIndices.ContainsKey(instance.Pointer) ? zoneInstanceIndices[instance.Pointer] : INVALID_INSTANCE_INDEX;
         }
 
+        /// <summary>
+        /// Return the registered instance with its unique identifier.
+        /// </summary>
+        /// <param name="globalZoneIndex"></param>
+        /// <param name="instanceIndex"></param>
+        /// <returns></returns>
         public T GetInstance((eDimensionIndex, LG_LayerType, eLocalZoneIndex) globalZoneIndex, uint instanceIndex)
         {
             if (!index2Instance.ContainsKey(globalZoneIndex)) return default;

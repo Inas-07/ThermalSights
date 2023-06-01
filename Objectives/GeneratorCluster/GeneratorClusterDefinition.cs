@@ -4,7 +4,7 @@ using ExtraObjectiveSetup.BaseClasses;
 
 namespace ExtraObjectiveSetup.Objectives.GeneratorCluster
 {
-    public class GeneratorClusterDefinition : BaseDefinition
+    public class GeneratorClusterDefinition : BaseInstanceDefinition
     {
         public uint NumberOfGenerators { get; set; } = 0;
 

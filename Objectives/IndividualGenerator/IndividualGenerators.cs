@@ -5,7 +5,7 @@ using ExtraObjectiveSetup.BaseClasses;
 
 namespace ExtraObjectiveSetup.Objectives.IndividualGenerator
 {
-    public class IndividualGenerator : BaseDefinition
+    public class IndividualGenerator : BaseInstanceDefinition
     {
         public bool ForceAllowPowerCellInsertion { get; set; } = false;
 
