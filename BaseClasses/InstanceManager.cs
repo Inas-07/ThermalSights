@@ -46,7 +46,7 @@ namespace ExtraObjectiveSetup.BaseClasses
             return instanceIndex;
         }
 
-        public uint Register(T instance) => Register(GetGlobalZoneIndex(instance), instance);
+        public virtual uint Register(T instance) => Register(GetGlobalZoneIndex(instance), instance);
 
         /// <summary>
         /// Return the zone instance index for this 'instance'. 

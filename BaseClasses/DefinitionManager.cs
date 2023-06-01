@@ -6,7 +6,6 @@ using MTFO.API;
 using ExtraObjectiveSetup.Utils;
 using LevelGeneration;
 using GameData;
-using System.Linq;
 using ExtraObjectiveSetup.JSON;
 
 namespace ExtraObjectiveSetup.BaseClasses
@@ -70,8 +69,9 @@ namespace ExtraObjectiveSetup.BaseClasses
 
             if (this.definitions.ContainsKey(definitions.MainLevelLayout))
             {
-                EOSLogger.Warning("Replaced MainLevelLayout {0}", definitions.MainLevelLayout);
+                EOSLogger.Log("Replaced MainLevelLayout {0}", definitions.MainLevelLayout);
             }
+
             this.definitions[definitions.MainLevelLayout] = definitions;
         }
 
@@ -102,9 +102,10 @@ namespace ExtraObjectiveSetup.BaseClasses
 
         public virtual T GetDefinition(eDimensionIndex dimensionIndex, LG_LayerType layerType, eLocalZoneIndex localIndex, uint instanceIndex)
         {
-            var definitionsForLevel = definitions[RundownManager.ActiveExpedition.LevelLayoutData];
+            if (!definitions.ContainsKey(RundownManager.ActiveExpedition.LevelLayoutData)) return null;
 
-            return definitionsForLevel.Definitions.First(def => def.DimensionIndex == dimensionIndex && def.LayerType == layerType && def.LocalIndex == localIndex && def.InstanceIndex == instanceIndex);
+            return definitions[RundownManager.ActiveExpedition.LevelLayoutData]
+                .Definitions.Find(def => def.DimensionIndex == dimensionIndex && def.LayerType == layerType && def.LocalIndex == localIndex && def.InstanceIndex == instanceIndex);
         }
 
         /// <summary>

@@ -20,6 +20,8 @@ namespace ExtraObjectiveSetup.BaseClasses
         public uint InstanceIndex { get; set; } = uint.MaxValue;
 
         public (eDimensionIndex, LG_LayerType, eLocalZoneIndex) GlobalZoneIndex => (DimensionIndex, LayerType, LocalIndex);
+
+        public override string ToString() => $"{GlobalZoneIndex}, Instance_{InstanceIndex}";
     }
 
 
