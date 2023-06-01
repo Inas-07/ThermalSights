@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 using LevelGeneration;
-using ExtraObjectiveSetup.ObjectiveInstance;
+using ExtraObjectiveSetup.Instances;
 namespace ExtraObjectiveSetup.Patches
 {
     [HarmonyPatch]
@@ -10,7 +10,7 @@ namespace ExtraObjectiveSetup.Patches
         [HarmonyPatch(typeof(LG_ComputerTerminal), nameof(LG_ComputerTerminal.Setup))]
         private static void Post_LG_ComputerTerminal_Setup(LG_ComputerTerminal __instance)
         {
-            TerminalManager.Current.Register(__instance);
+            TerminalInstanceManager.Current.Register(__instance);
         }
     }
 }

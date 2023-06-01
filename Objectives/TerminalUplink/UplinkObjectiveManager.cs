@@ -1,6 +1,5 @@
 ﻿using GTFO.API;
 using ExtraObjectiveSetup.Utils;
-using System.IO;
 using System.Collections.Generic;
 using LevelGeneration;
 using ChainedPuzzles;
@@ -8,22 +7,23 @@ using GameData;
 using Localization;
 using System;
 using GTFO.API.Extensions;
+using ExtraObjectiveSetup.Instances;
+using ExtraObjectiveSetup.BaseClasses;
 
-namespace ExtraObjectiveSetup.ObjectiveDefinition.TerminalUplink
+namespace ExtraObjectiveSetup.Objectives.TerminalUplink
 {
-    internal sealed class UplinkManager: ObjectiveDefinitionManager<UplinkDefinition>
+    internal sealed class UplinkObjectiveManager: DefinitionManager<UplinkDefinition>
     {
-        public static readonly UplinkManager Current;
+        public static readonly UplinkObjectiveManager Current = new();
 
         private TextDataBlock UplinkAddrLogContentBlock = null;
 
-        protected override string DEFINITION_PATH => Path.Combine(PLUGIN_CUSTOM_FOLDER, "TerminalUplink");
+        protected override string DEFINITION_NAME { get; } = "TerminalUplink";
 
-        protected override void AddDefinitions(ObjectiveDefinitionsForLevel<UplinkDefinition> definitions)
+        protected override void AddDefinitions(DefinitionsForLevel<UplinkDefinition> definitions)
         {
             // because we have chained puzzles, sorting is necessary to preserve chained puzzle instance order.
-            base.Sort(definitions);
-
+            Sort(definitions);
             definitions.Definitions.ForEach(u => u.RoundOverrides.Sort((r1, r2) => r1.RoundIndex != r2.RoundIndex ? (r1.RoundIndex < r2.RoundIndex ? -1 : 1) : 0));
 
             base.AddDefinitions(definitions);
@@ -31,35 +31,33 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition.TerminalUplink
 
         private void Build(UplinkDefinition def)
         {
-            if (def.InstanceIndex < 0) return;
-
-            LG_ComputerTerminal uplinkTerminal = Helper.FindTerminal(def.DimensionIndex, def.LayerType, def.LocalIndex, (int)def.InstanceIndex);
+            LG_ComputerTerminal uplinkTerminal = TerminalInstanceManager.Current.GetInstance(def.DimensionIndex, def.LayerType, def.LocalIndex, def.InstanceIndex);
 
             if(uplinkTerminal == null) return;
 
             if (uplinkTerminal.m_isWardenObjective && uplinkTerminal.UplinkPuzzle != null)
             {
-                EOSLogger.Error($"BuildUplinkOverride: Uplink already built by vanilla, aborting custom build!");
+                EOSLogger.Error($"BuildUplink: Uplink already built by vanilla, aborting custom build!");
                 return;
             }
 
             if (def.SetupAsCorruptedUplink)
             {
-                LG_ComputerTerminal receiver = Helper.FindTerminal(
+                LG_ComputerTerminal receiver = TerminalInstanceManager.Current.GetInstance(
                     def.CorruptedUplinkReceiver.DimensionIndex,
                     def.CorruptedUplinkReceiver.LayerType,
                     def.CorruptedUplinkReceiver.LocalIndex,
-                    (int)def.CorruptedUplinkReceiver.InstanceIndex);
+                    def.CorruptedUplinkReceiver.InstanceIndex);
 
                 if (receiver == null)
                 {
-                    EOSLogger.Error("BuildUplinkOverride: SetupAsCorruptedUplink specified but didn't find the receiver terminal, will fall back to normal uplink instead");
+                    EOSLogger.Error("BuildUplink: SetupAsCorruptedUplink specified but didn't find the receiver terminal, will fall back to normal uplink instead");
                     return;
                 }
 
-                if (receiver == uplinkTerminal)
+                if (receiver.Pointer == uplinkTerminal.Pointer)
                 {
-                    EOSLogger.Error("BuildUplinkOverride: Don't specified uplink sender and receiver on the same terminal");
+                    EOSLogger.Error("BuildUplink: Don't specify uplink sender and receiver on the same terminal");
                     return;
                 }
 
@@ -71,7 +69,7 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition.TerminalUplink
             SetupUplinkPuzzle(uplinkTerminal.UplinkPuzzle, uplinkTerminal, def);
             uplinkTerminal.UplinkPuzzle.OnPuzzleSolved += new Action(() =>
             {
-                def.EventsOnComplete.ForEach(e => WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(e, eWardenObjectiveEventTrigger.None, true));
+                def.EventsOnComplete?.ForEach(e => WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(e, eWardenObjectiveEventTrigger.None, true));
             });
 
 
@@ -94,7 +92,7 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition.TerminalUplink
                 LG_ComputerTerminal addressLogTerminal = null;
 
                 EOSLogger.Debug($"BuildUplinkOverride: UseUplinkAddress");
-                addressLogTerminal = Helper.FindTerminal(def.UplinkAddressLogPosition.DimensionIndex, def.UplinkAddressLogPosition.LayerType, def.UplinkAddressLogPosition.LocalIndex, (int)def.UplinkAddressLogPosition.InstanceIndex);
+                addressLogTerminal = TerminalInstanceManager.Current.GetInstance(def.UplinkAddressLogPosition.DimensionIndex, def.UplinkAddressLogPosition.LayerType, def.UplinkAddressLogPosition.LocalIndex, def.UplinkAddressLogPosition.InstanceIndex);
                 if (addressLogTerminal == null)
                 {
                     EOSLogger.Error($"BuildUplinkOverride: didn't find the terminal to put the uplink address log, will put on uplink terminal");
@@ -174,22 +172,7 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition.TerminalUplink
 
             EOSLogger.Debug($"BuildUplink: built on {(def.DimensionIndex, def.LayerType, def.LocalIndex, def.InstanceIndex)}");
         }
-
-        private void OnBuildDone()
-        {
-            if (!definitions.ContainsKey(RundownManager.ActiveExpedition.LevelLayoutData)) return;
-            if (UplinkAddrLogContentBlock == null)
-            {
-                UplinkAddrLogContentBlock = GameDataBlockBase<TextDataBlock>.GetBlock("InGame.UplinkTerminal.UplinkAddrLog");
-            }
-            definitions[RundownManager.ActiveExpedition.LevelLayoutData].Definitions.ForEach(Build);
-        }
-
-        private void OnLevelCleanup()
-        {
-
-        }
-
+        
         private void SetupUplinkPuzzle(TerminalUplinkPuzzle uplinkPuzzle, LG_ComputerTerminal terminal, UplinkDefinition def)
         {
             uplinkPuzzle.m_rounds = new List<TerminalUplinkPuzzleRound>().ToIl2Cpp();
@@ -219,19 +202,36 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition.TerminalUplink
             }
         }
 
-        public override void Init() {}
-
-        static UplinkManager()
+        private void ClearChainedPuzzleInstance(UplinkDefinition def)
         {
-            Current = new();
-            LevelAPI.OnBuildDone += Current.OnBuildDone;
-            LevelAPI.OnLevelCleanup += Current.OnLevelCleanup;
+            def.RoundOverrides.ForEach(r => r.ChainedPuzzleToEndRoundInstance = null);
         }
 
-        private UplinkManager() : base() 
+        private void OnBuildDone()
         {
-            EOSLogger.Warning("Hello uplink manager");
+            if (!definitions.ContainsKey(RundownManager.ActiveExpedition.LevelLayoutData)) return;
+            if (UplinkAddrLogContentBlock == null)
+            {
+                UplinkAddrLogContentBlock = GameDataBlockBase<TextDataBlock>.GetBlock("InGame.UplinkTerminal.UplinkAddrLog");
+            }
+            definitions[RundownManager.ActiveExpedition.LevelLayoutData].Definitions.ForEach(Build);
         }
 
+        private void OnLevelCleanup()
+        {
+            if (!definitions.ContainsKey(RundownManager.ActiveExpedition.LevelLayoutData)) return;
+            definitions[RundownManager.ActiveExpedition.LevelLayoutData].Definitions.ForEach(ClearChainedPuzzleInstance);
+        }
+
+        static UplinkObjectiveManager()
+        {
+
+        }
+
+        private UplinkObjectiveManager() : base() 
+        {
+            LevelAPI.OnBuildDone += OnBuildDone;
+            LevelAPI.OnLevelCleanup += OnLevelCleanup;
+        }
     }
 }

@@ -1,10 +1,11 @@
 ﻿using ChainedPuzzles;
+using ExtraObjectiveSetup.BaseClasses;
 using GameData;
 using LevelGeneration;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace ExtraObjectiveSetup.ObjectiveDefinition.TerminalUplink
+namespace ExtraObjectiveSetup.Objectives.TerminalUplink
 {
     public enum UplinkTerminal
     {

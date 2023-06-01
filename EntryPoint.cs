@@ -1,7 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
-using ExtraObjectiveSetup.ObjectiveDefinition;
 using ExtraObjectiveSetup.JSON;
 
 namespace ExtraObjectiveSetup
@@ -13,7 +12,7 @@ namespace ExtraObjectiveSetup
     
     public class EntryPoint: BasePlugin
     {
-        public const string AUTHOR = "Inas07";
+        public const string AUTHOR = "Inas";
         public const string PLUGIN_NAME = "ExtraObjectiveSetup";
         public const string VERSION = "1.0.0";
 
@@ -24,7 +23,19 @@ namespace ExtraObjectiveSetup
             m_Harmony = new Harmony("ExtraObjectiveSetup");
             m_Harmony.PatchAll();
 
-            ObjectiveDefinitionManager<BaseDefinition>.Initialize();
+            SetupManagers();
+        }
+
+        /// <summary>
+        /// Explicitly invoke Init() to all managers to eager-load, which in the meantime defines chained puzzle creation order if any
+        /// </summary>
+        private void SetupManagers()
+        {
+            Objectives.IndividualGenerator.IndividualGeneratorObjectiveManager.Current.Init();
+            Objectives.GeneratorCluster.GeneratorClusterObjectiveManager.Current.Init();
+            Objectives.ActivateSmallHSU.HSUActivatorObjectiveManager.Current.Init();
+            Objectives.TerminalUplink.UplinkObjectiveManager.Current.Init();
+            Tweaks.TerminalPosition.TerminalPositionOverrideManager.Current.Init();
         }
     }
 }

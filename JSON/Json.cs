@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.IO;
 using ExtraObjectiveSetup.Utils;
 using GTFO.API.JSON.Converters;
 namespace ExtraObjectiveSetup.JSON
@@ -48,11 +47,6 @@ namespace ExtraObjectiveSetup.JSON
         public static string Serialize<T>(T value)
         {
             return JsonSerializer.Serialize(value, _setting);
-        }
-
-        public static void Load<T>(string filePath, out T config) where T : new()
-        {
-            config = Deserialize<T>(File.ReadAllText(filePath));
         }
     }
 }

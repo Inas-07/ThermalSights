@@ -7,25 +7,48 @@ using ExtraObjectiveSetup.Utils;
 using LevelGeneration;
 using GameData;
 using System.Linq;
-using ExtraObjectiveSetup.ObjectiveDefinition.TerminalUplink;
 using ExtraObjectiveSetup.JSON;
 
-namespace ExtraObjectiveSetup.ObjectiveDefinition
+namespace ExtraObjectiveSetup.BaseClasses
 {
-    public abstract class ObjectiveDefinitionManager<T> where T : BaseDefinition, new()
+    /// <summary>
+    /// Objective definition manager, holds all objective definition of type T.
+    /// Enables live edit of definitions.
+    /// </summary>
+    /// <typeparam name="T"> Common base class of objective definition. </typeparam>
+    public abstract class DefinitionManager<T> where T : BaseDefinition, new()
     {
+        /// <summary>
+        /// Path to the common parent folder of ALL definitions 
+        /// </summary>
         public static string PLUGIN_CUSTOM_FOLDER { get; private set; } = Path.Combine(MTFOPathAPI.CustomPath, "ExtraObjectiveSetup");
 
-        protected Dictionary<uint, ObjectiveDefinitionsForLevel<T>> definitions = new();
-
-        protected readonly LiveEditListener liveEditListener;
-
-        protected abstract string DEFINITION_PATH { get; }
+        /// <summary>
+        /// Definitions holder. Hold all definitions of this type (the generic type T) for the loaded rundown(s) (or, to be more specific, profile).
+        /// Subclasses should not modify its contents, except properies with [JsonIgnore] attribute.
+        /// </summary>
+        protected Dictionary<uint, DefinitionsForLevel<T>> definitions = new();
 
         /// <summary>
-        /// Sort definitions by dimension index, layer type, local index and instance index.
+        /// LiveEditListener to enable live edit for this definition.
+        /// Subclasses may add additional operations upon live-edit events via this listener.
         /// </summary>
-        protected void Sort(ObjectiveDefinitionsForLevel<T> levelDefs)
+        protected readonly LiveEditListener liveEditListener;
+
+        /// <summary>
+        /// The name of definition to hold. This defines the definition file path from which to fetch, live-edit definition data. 
+        /// </summary>
+        protected abstract string DEFINITION_NAME { get; }
+
+        /// <summary>
+        /// Path to all definition files of this type (generic type T) of definition. 
+        /// </summary>
+        protected string DEFINITION_PATH { get; private set; } 
+
+        /// <summary>
+        /// Utility method. Sort definitions by dimension index, layer type, local index and instance index.
+        /// </summary>
+        protected void Sort(DefinitionsForLevel<T> levelDefs)
         {
             levelDefs.Definitions.Sort((u1, u2) =>
             {
@@ -40,7 +63,8 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition
         /// <summary>
         /// Add objective definitions for a level.
         /// </summary>
-        protected virtual void AddDefinitions(ObjectiveDefinitionsForLevel<T> definitions)
+        /// <param name="definitions">definitions of a level to be added</param>
+        protected virtual void AddDefinitions(DefinitionsForLevel<T> definitions)
         {
             if (definitions == null) return;
 
@@ -51,18 +75,29 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition
             this.definitions[definitions.MainLevelLayout] = definitions;
         }
 
+        /// <summary>
+        /// Common callback function of live-edit, implements definition add / update.
+        /// If additional operation is needed in subclasses, turn to `liveEditListener` instead.
+        /// </summary>
+        /// <param name="e">live edit args</param>
         private void FileChanged(LiveEditEventArgs e)
         {
             EOSLogger.Warning($"LiveEdit File Changed: {e.FullPath}");
             LiveEdit.TryReadFileContent(e.FullPath, (content) =>
             {
-                ObjectiveDefinitionsForLevel<T> conf = Json.Deserialize<ObjectiveDefinitionsForLevel<T>>(content);
+                DefinitionsForLevel<T> conf = Json.Deserialize<DefinitionsForLevel<T>>(content);
                 AddDefinitions(conf);
             });
         }
 
         public virtual List<T> GetDefinitionsForLevel(uint MainLevelLayout) => definitions.ContainsKey(MainLevelLayout) ? definitions[MainLevelLayout].Definitions : null;
 
+        /// <summary>
+        /// Get definitni
+        /// </summary>
+        /// <param name="globalIndex"></param>
+        /// <param name="instanceIndex"></param>
+        /// <returns></returns>
         public T GetDefinition((eDimensionIndex, LG_LayerType, eLocalZoneIndex) globalIndex, uint instanceIndex) => GetDefinition(globalIndex.Item1, globalIndex.Item2, globalIndex.Item3, instanceIndex);
 
         public virtual T GetDefinition(eDimensionIndex dimensionIndex, LG_LayerType layerType, eLocalZoneIndex localIndex, uint instanceIndex)
@@ -72,23 +107,34 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition
             return definitionsForLevel.Definitions.First(def => def.DimensionIndex == dimensionIndex && def.LayerType == layerType && def.LocalIndex == localIndex && def.InstanceIndex == instanceIndex);
         }
 
+        /// <summary>
+        /// Initialize this definition manager. Subclasses are not required to implement this method. 
+        /// Invoke this method to eagerly load the definition manager.
+        /// </summary>
         public virtual void Init() { }
 
-        protected ObjectiveDefinitionManager()
+        protected DefinitionManager()
         {
+            if (!Directory.Exists(PLUGIN_CUSTOM_FOLDER))
+            {
+                Directory.CreateDirectory(PLUGIN_CUSTOM_FOLDER);
+            }
+
+            DEFINITION_PATH = Path.Combine(PLUGIN_CUSTOM_FOLDER, DEFINITION_NAME);
+
             if (!Directory.Exists(DEFINITION_PATH))
             {
                 Directory.CreateDirectory(DEFINITION_PATH);
                 var file = File.CreateText(Path.Combine(DEFINITION_PATH, "Template.json"));
-                file.WriteLine(Json.Serialize(new ObjectiveDefinitionsForLevel<T>()));
+                file.WriteLine(Json.Serialize(new DefinitionsForLevel<T>()));
                 file.Flush();
                 file.Close();
             }
 
             foreach (string confFile in Directory.EnumerateFiles(DEFINITION_PATH, "*.json", SearchOption.AllDirectories))
             {
-                ObjectiveDefinitionsForLevel<T> conf;
-                Json.Load(confFile, out conf);
+                string content = File.ReadAllText(confFile);
+                DefinitionsForLevel<T> conf = Json.Deserialize<DefinitionsForLevel<T>>(content);
 
                 AddDefinitions(conf);
             }
@@ -97,17 +143,6 @@ namespace ExtraObjectiveSetup.ObjectiveDefinition
             liveEditListener.FileChanged += FileChanged;
         }
 
-        internal static void Initialize()
-        {
-            if (!Directory.Exists(PLUGIN_CUSTOM_FOLDER))
-            {
-                Directory.CreateDirectory(PLUGIN_CUSTOM_FOLDER);
-            }
-
-            // explicitly call to all inherited classes, which defines chained puzzle creation order if any
-            UplinkManager.Current.Init();
-        }
-
-        static ObjectiveDefinitionManager() {}
+        static DefinitionManager() { }
     }
 }
