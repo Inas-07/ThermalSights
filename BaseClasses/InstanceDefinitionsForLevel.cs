@@ -16,9 +16,9 @@ namespace ExtraObjectiveSetup.BaseClasses
         [JsonPropertyOrder(-2)]
         public eLocalZoneIndex LocalIndex { get; set; }
 
-        public (eDimensionIndex, LG_LayerType, eLocalZoneIndex) ToGlobalZoneIndexTuple() => (DimensionIndex, LayerType, LocalIndex);
+        public (eDimensionIndex, LG_LayerType, eLocalZoneIndex) GlobalZoneIndexTuple() => (DimensionIndex, LayerType, LocalIndex);
     
-        public override string ToString() => $"{ToGlobalZoneIndexTuple}";
+        public override string ToString() => $"{GlobalZoneIndexTuple}";
     }
 
     public class BaseInstanceDefinition: GlobalZoneIndex
@@ -26,7 +26,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         [JsonPropertyOrder(-2)]
         public uint InstanceIndex { get; set; } = uint.MaxValue;
 
-        public override string ToString() => $"{ToGlobalZoneIndexTuple()}, Instance_{InstanceIndex}";
+        public override string ToString() => $"{GlobalZoneIndexTuple()}, Instance_{InstanceIndex}";
     }
 
     public class InstanceDefinitionsForLevel<T> where T : BaseInstanceDefinition, new()

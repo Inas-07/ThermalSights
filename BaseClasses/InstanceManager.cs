@@ -11,6 +11,8 @@ namespace ExtraObjectiveSetup.BaseClasses
         protected Dictionary<(eDimensionIndex, LG_LayerType, eLocalZoneIndex), Dictionary<System.IntPtr, uint>> instances2Index = new();
         protected Dictionary<(eDimensionIndex, LG_LayerType, eLocalZoneIndex), List<T>> index2Instance = new();
 
+        protected HashSet<(eDimensionIndex, LG_LayerType, eLocalZoneIndex, uint)> builtInstances = new();
+
         public const uint INVALID_INSTANCE_INDEX = uint.MaxValue;
 
         /// <summary>
@@ -115,6 +117,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         {
             index2Instance.Clear();
             instances2Index.Clear();
+            builtInstances.Clear();
         }
 
         public abstract (eDimensionIndex, LG_LayerType, eLocalZoneIndex) GetGlobalZoneIndex(T instance);

@@ -3,6 +3,8 @@ using LevelGeneration;
 using ExtraObjectiveSetup.Instances;
 using ExtraObjectiveSetup.Tweaks.TerminalPosition;
 using ExtraObjectiveSetup.Utils;
+using ExtraObjectiveSetup.BaseClasses;
+
 namespace ExtraObjectiveSetup.Patches
 {
     [HarmonyPatch]
