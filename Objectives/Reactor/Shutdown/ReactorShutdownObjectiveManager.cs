@@ -66,6 +66,8 @@ namespace ExtraObjectiveSetup.Objectives.Reactor.Shutdown
 
         private void Build(ReactorShutdownDefinition def)
         {
+            return; // untested, so no release for now
+
             var reactor = ReactorInstanceManager.Current.GetInstance(def.GlobalZoneIndexTuple(), def.InstanceIndex);
             if (reactor == null)
             {
@@ -200,12 +202,6 @@ namespace ExtraObjectiveSetup.Objectives.Reactor.Shutdown
             EOSLogger.Debug($"ReactorShutdown: {def.GlobalZoneIndexTuple()}, Instance_{def.InstanceIndex}, custom setup completed");
         }
 
-        private void ClearChainedPuzzleInstances(ReactorShutdownDefinition def)
-        {
-            def.ChainedPuzzleToActiveInstance = null;
-            def.ChainedPuzzleOnVerificationInstance = null;
-        }
-
         // TODO: HOW TO HANDLE THE update() ?
         private void OnBuildDone()
         {
@@ -216,7 +212,10 @@ namespace ExtraObjectiveSetup.Objectives.Reactor.Shutdown
         private void OnLevelCleanup()
         {
             if (!definitions.ContainsKey(RundownManager.ActiveExpedition.LevelLayoutData)) return;
-            definitions[RundownManager.ActiveExpedition.LevelLayoutData].Definitions.ForEach(ClearChainedPuzzleInstances);
+            definitions[RundownManager.ActiveExpedition.LevelLayoutData].Definitions.ForEach(def => {
+                def.ChainedPuzzleToActiveInstance = null;
+                def.ChainedPuzzleOnVerificationInstance = null;
+            });
         }
 
         private ReactorShutdownObjectiveManager() : base() 

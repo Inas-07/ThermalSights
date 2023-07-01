@@ -17,7 +17,7 @@ namespace ExtraObjectiveSetup.Patches.Reactor
         private static bool Pre_LG_WardenObjective_Reactor_Update(LG_WardenObjective_Reactor __instance)
         {
             // overwrite Update for eReactorStatus.Shutdown_waitForVerify
-            if (__instance.m_currentState.status != eReactorStatus.Shutdown_waitForVerify) return true;
+            if (__instance.m_isWardenObjective || __instance.m_currentState.status != eReactorStatus.Shutdown_waitForVerify) return true;
 
             if (!_checked)
             {

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using ExtraObjectiveSetup.Utils;
 using GTFO.API.JSON.Converters;
+
 namespace ExtraObjectiveSetup.JSON
 {
     internal static class Json
@@ -13,7 +14,8 @@ namespace ExtraObjectiveSetup.JSON
             IncludeFields = false,
             PropertyNameCaseInsensitive = true,
             WriteIndented = true,
-            IgnoreReadOnlyProperties = true
+            IgnoreReadOnlyProperties = true,
+
         };
 
 
@@ -32,6 +34,11 @@ namespace ExtraObjectiveSetup.JSON
                 _setting.Converters.Add(new LocalizedTextConverter());
             }
 
+            if(AWOUtil.IsLoaded)
+            {
+                _setting.Converters.Add(AWOUtil.AWOEventDataConverter);
+                EOSLogger.Log("AWO support found!");
+            }
         }
 
         public static T Deserialize<T>(string json)

@@ -11,11 +11,11 @@ using ExtraObjectiveSetup.JSON;
 namespace ExtraObjectiveSetup.BaseClasses
 {
     /// <summary>
-    /// Objective definition manager, holds all objective definition of type T.
-    /// Enables live edit of definitions.
+    /// Zone tweaks holder.
+    /// This is a copy of InstanceDefinitionManager, with generic type bound being modified
     /// </summary>
     /// <typeparam name="T"> Common base class of objective definition. </typeparam>
-    public abstract class InstanceDefinitionManager<T> where T : BaseInstanceDefinition, new()
+    public abstract class ZoneDefinitionManager<T> where T : GlobalZoneIndex, new()
     {
         /// <summary>
         /// Path to the common parent folder of ALL definitions 
@@ -26,7 +26,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// Definitions holder. Hold all definitions of this type (the generic type T) for the loaded rundown(s) (or, to be more specific, profile).
         /// Subclasses should not modify its contents, except properies with [JsonIgnore] attribute.
         /// </summary>
-        protected Dictionary<uint, InstanceDefinitionsForLevel<T>> definitions = new();
+        protected Dictionary<uint, ZoneDefinitionsForLevel<T>> definitions = new();
 
         /// <summary>
         /// LiveEditListener to enable live edit for this definition.
@@ -47,14 +47,13 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// <summary>
         /// Utility method. Sort definitions by dimension index, layer type, local index and instance index.
         /// </summary>
-        protected void Sort(InstanceDefinitionsForLevel<T> levelDefs)
+        protected void Sort(ZoneDefinitionsForLevel<T> levelDefs)
         {
             levelDefs.Definitions.Sort((u1, u2) =>
             {
                 if (u1.DimensionIndex != u2.DimensionIndex) return (int)u1.DimensionIndex < (int)u2.DimensionIndex ? -1 : 1;
                 if (u1.LayerType != u2.LayerType) return (int)u1.LayerType < (int)u2.LayerType ? -1 : 1;
                 if (u1.LocalIndex != u2.LocalIndex) return (int)u1.LocalIndex < (int)u2.LocalIndex ? -1 : 1;
-                if (u1.InstanceIndex != u2.InstanceIndex) return u1.InstanceIndex < u2.InstanceIndex ? -1 : -1;
                 return 0;
             });
         }
@@ -63,7 +62,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// Add objective definitions for a level.
         /// </summary>
         /// <param name="definitions">definitions of a level to be added</param>
-        protected virtual void AddDefinitions(InstanceDefinitionsForLevel<T> definitions)
+        protected virtual void AddDefinitions(ZoneDefinitionsForLevel<T> definitions)
         {
             if (definitions == null) return;
 
@@ -80,12 +79,12 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// If additional operation is needed in subclasses, turn to `liveEditListener` instead.
         /// </summary>
         /// <param name="e">live edit args</param>
-        private void FileChanged(LiveEditEventArgs e)
+        protected virtual void FileChanged(LiveEditEventArgs e)
         {
             EOSLogger.Warning($"LiveEdit File Changed: {e.FullPath}");
             LiveEdit.TryReadFileContent(e.FullPath, (content) =>
             {
-                InstanceDefinitionsForLevel<T> conf = Json.Deserialize<InstanceDefinitionsForLevel<T>>(content);
+                ZoneDefinitionsForLevel<T> conf = Json.Deserialize<ZoneDefinitionsForLevel<T>>(content);
                 AddDefinitions(conf);
             });
         }
@@ -98,14 +97,14 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// <param name="globalIndex"></param>
         /// <param name="instanceIndex"></param>
         /// <returns></returns>
-        public T GetDefinition((eDimensionIndex, LG_LayerType, eLocalZoneIndex) globalIndex, uint instanceIndex) => GetDefinition(globalIndex.Item1, globalIndex.Item2, globalIndex.Item3, instanceIndex);
+        public virtual T GetDefinition((eDimensionIndex, LG_LayerType, eLocalZoneIndex) globalIndex) => GetDefinition(globalIndex.Item1, globalIndex.Item2, globalIndex.Item3);
 
-        public virtual T GetDefinition(eDimensionIndex dimensionIndex, LG_LayerType layerType, eLocalZoneIndex localIndex, uint instanceIndex)
+        public virtual T GetDefinition(eDimensionIndex dimensionIndex, LG_LayerType layerType, eLocalZoneIndex localIndex)
         {
             if (!definitions.ContainsKey(RundownManager.ActiveExpedition.LevelLayoutData)) return null;
 
             return definitions[RundownManager.ActiveExpedition.LevelLayoutData]
-                .Definitions.Find(def => def.DimensionIndex == dimensionIndex && def.LayerType == layerType && def.LocalIndex == localIndex && def.InstanceIndex == instanceIndex);
+                .Definitions.Find(def => def.DimensionIndex == dimensionIndex && def.LayerType == layerType && def.LocalIndex == localIndex);
         }
 
         /// <summary>
@@ -114,7 +113,7 @@ namespace ExtraObjectiveSetup.BaseClasses
         /// </summary>
         public virtual void Init() { }
 
-        protected InstanceDefinitionManager()
+        protected ZoneDefinitionManager()
         {
             if (!Directory.Exists(MODULE_CUSTOM_FOLDER))
             {
@@ -127,7 +126,7 @@ namespace ExtraObjectiveSetup.BaseClasses
             {
                 Directory.CreateDirectory(DEFINITION_PATH);
                 var file = File.CreateText(Path.Combine(DEFINITION_PATH, "Template.json"));
-                file.WriteLine(Json.Serialize(new InstanceDefinitionsForLevel<T>()));
+                file.WriteLine(Json.Serialize(new ZoneDefinitionsForLevel<T>()));
                 file.Flush();
                 file.Close();
             }
@@ -135,7 +134,7 @@ namespace ExtraObjectiveSetup.BaseClasses
             foreach (string confFile in Directory.EnumerateFiles(DEFINITION_PATH, "*.json", SearchOption.AllDirectories))
             {
                 string content = File.ReadAllText(confFile);
-                InstanceDefinitionsForLevel<T> conf = Json.Deserialize<InstanceDefinitionsForLevel<T>>(content);
+                ZoneDefinitionsForLevel<T> conf = Json.Deserialize<ZoneDefinitionsForLevel<T>>(content);
 
                 AddDefinitions(conf);
             }
@@ -144,6 +143,6 @@ namespace ExtraObjectiveSetup.BaseClasses
             liveEditListener.FileChanged += FileChanged;
         }
 
-        static InstanceDefinitionManager() { }
+        static ZoneDefinitionManager() { }
     }
 }

@@ -8,13 +8,15 @@ namespace ExtraObjectiveSetup
     [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency(MTFOUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency(MTFOPartialDataUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(AWOUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(AUTHOR + "." + PLUGIN_NAME, PLUGIN_NAME, VERSION)]
     
     public class EntryPoint: BasePlugin
     {
         public const string AUTHOR = "Inas";
         public const string PLUGIN_NAME = "ExtraObjectiveSetup";
-        public const string VERSION = "1.1.0";
+        public const string VERSION = "1.2.0";
+
 
         private Harmony m_Harmony;
         
@@ -36,7 +38,10 @@ namespace ExtraObjectiveSetup
             Objectives.ActivateSmallHSU.HSUActivatorObjectiveManager.Current.Init();
             Objectives.TerminalUplink.UplinkObjectiveManager.Current.Init();
             Objectives.Reactor.Shutdown.ReactorShutdownObjectiveManager.Current.Init();
+
             Tweaks.TerminalPosition.TerminalPositionOverrideManager.Current.Init();
+            Tweaks.Scout.ScoutScreamEventManager.Current.Init();
+            Tweaks.BossEvents.BossDeathEventManager.Current.Init();
         }
     }
 }
