@@ -17,15 +17,8 @@ namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
         public const string PLUGIN_NAME = "EOSExt.SecDoorTerminal";
         public const string VERSION = "1.0.0";
 
-        //private Harmony m_Harmony;
-        
         public override void Load()
         {
-            //m_Harmony = new Harmony("EOSExt.SecDoorTerminal");
-            //m_Harmony.PatchAll();
-
-
-
             SetupManagers();
         }
 

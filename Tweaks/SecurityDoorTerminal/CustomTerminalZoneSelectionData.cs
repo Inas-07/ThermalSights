@@ -9,5 +9,10 @@ namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
         public int TerminalIndex { set; get; } = 0;
 
         public int StaticSeed { set; get; } = 0;
+
+        public CustomTerminalZoneSelectionData()
+        {
+            TerminalIndex = Math.Max(0, TerminalIndex);
+        }
     }
 }

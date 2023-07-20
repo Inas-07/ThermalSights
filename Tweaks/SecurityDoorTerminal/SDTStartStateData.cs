@@ -1,4 +1,5 @@
-﻿using LevelGeneration;
+﻿using System;
+using LevelGeneration;
 using System.Collections.Generic;
 
 namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
@@ -26,7 +27,7 @@ namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
         public SDTStartStateData()
         {
             // TODO: debug this
-            //PasswordPartCount = Math.Max(1, PasswordPartCount);
+            PasswordPartCount = Math.Max(1, PasswordPartCount);
         }
     }
 }
