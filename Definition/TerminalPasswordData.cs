@@ -1,13 +1,10 @@
 ﻿using System;
-using LevelGeneration;
 using System.Collections.Generic;
 
-namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
+namespace EOSExt.SecurityDoorTerminal.Definition
 {
-    public class SDTStartStateData
+    public class TerminalPasswordData
     {
-        public TERM_State StartingState { set; get; } = TERM_State.Sleeping;
-
         public bool PasswordProtected { set; get; } = false;
 
         public string Password { set; get; } = string.Empty;
@@ -22,9 +19,9 @@ namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
 
         public bool ShowPasswordPartPositions { set; get; } = false;
 
-        public List<List<CustomTerminalZoneSelectionData>> TerminalZoneSelectionDatas { set; get; } = new() { new() { new() } }; 
+        public List<List<CustomTerminalZoneSelectionData>> TerminalZoneSelectionDatas { set; get; } = new() { new() { new() } };
 
-        public SDTStartStateData()
+        public TerminalPasswordData()
         {
             // TODO: debug this
             PasswordPartCount = Math.Max(1, PasswordPartCount);

@@ -1,8 +1,9 @@
 ﻿using GameData;
 using System;
-namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
+
+namespace EOSExt.SecurityDoorTerminal.Definition
 {
-    public class CustomTerminalZoneSelectionData: BaseClasses.GlobalZoneIndex
+    public class CustomTerminalZoneSelectionData : ExtraObjectiveSetup.BaseClasses.GlobalZoneIndex
     {
         public eSeedType SeedType { set; get; } = eSeedType.SessionSeed;
 

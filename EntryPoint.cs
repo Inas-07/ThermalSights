@@ -1,8 +1,9 @@
 ﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
+using ExtraObjectiveSetup.Utils;
 using ExtraObjectiveSetup.JSON;
 
-namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
+namespace EOSExt.SecurityDoorTerminal
 {
     [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("Inas.ExtraObjectiveSetup", BepInDependency.DependencyFlags.HardDependency)]
@@ -14,12 +15,13 @@ namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
     public class EntryPoint: BasePlugin
     {
         public const string AUTHOR = "Inas";
-        public const string PLUGIN_NAME = "EOSExt.SecDoorTerminal";
+        public const string PLUGIN_NAME = "EOSExt.SecurityDoorTerminal";
         public const string VERSION = "1.0.0";
 
         public override void Load()
         {
             SetupManagers();
+            EOSLogger.Log("ExtraObjectiveSetup.SecurityDoorTerminal loaded.");
         }
 
         /// <summary>

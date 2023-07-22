@@ -3,7 +3,7 @@ using LevelGeneration;
 using Localization;
 using System.Collections.Generic;
 
-namespace ExtraObjectiveSetup.Tweaks.SecurityDoorTerminal
+namespace EOSExt.SecurityDoorTerminal.Definition
 {
     public class SDTCustomCommand
     {
