@@ -5,7 +5,7 @@ namespace EOSExt.SecurityDoorTerminal.Definition
 {
     public class SecurityDoorTerminalDefinition : ExtraObjectiveSetup.BaseClasses.GlobalZoneIndex
     {
-        public SDTSettings Settings { get; set; } = new();
+        public SDTStateSetting StateSettings { get; set; } = new();
 
         public List<TerminalLogFileData> LocalLogFiles { set; get; } = new();
 

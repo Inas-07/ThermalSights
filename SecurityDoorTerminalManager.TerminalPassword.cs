@@ -192,6 +192,5 @@ namespace EOSExt.SecurityDoorTerminal
         {
             levelSDTs.ForEach((tp) => BuildSDT_Password(tp.sdt, tp.def));
         }
-
     }
 }

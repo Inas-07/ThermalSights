@@ -5,7 +5,6 @@ using ExtraObjectiveSetup;
 using ExtraObjectiveSetup.Utils;
 using SecDoorTerminalInterface;
 using GameData;
-using ChainedPuzzles;
 using GTFO.API.Extensions;
 using Localization;
 using GTFO.API;
@@ -21,79 +20,6 @@ namespace EOSExt.SecurityDoorTerminal
         private List<(SecDoorTerminal sdt, SecurityDoorTerminalDefinition def)> levelSDTs = new();
 
         protected override string DEFINITION_NAME => "SecDoorTerminal";
-
-        public bool TryGetZoneEntranceSecDoor(LG_Zone zone, out LG_SecurityDoor door)
-        {
-            if (zone == null)
-            {
-                door = null;
-                return false;
-            }
-            if (zone.m_sourceGate == null)
-            {
-                door = null;
-                return false;
-            }
-            if (zone.m_sourceGate.SpawnedDoor == null)
-            {
-                door = null;
-                return false;
-            }
-            door = zone.m_sourceGate.SpawnedDoor.TryCast<LG_SecurityDoor>();
-            return door != null;
-        }
-
-        protected override void AddDefinitions(ZoneDefinitionsForLevel<SecurityDoorTerminalDefinition> definitions)
-        {
-            // instantiate sec door terminal instance in order
-            Sort(definitions);
-            base.AddDefinitions(definitions);
-        }
-
-        public static (eDimensionIndex dimensionIndex, LG_LayerType layerType, eLocalZoneIndex localIndex) GlobalZoneIndexOf(SecDoorTerminal sdt) => (sdt.SpawnNode.m_dimension.DimensionIndex, sdt.SpawnNode.LayerType, sdt.SpawnNode.m_zone.LocalIndex);
-
-        private void AddUniqueCommand(SecDoorTerminal sdt, SDTCustomCommand cmd)
-        {
-            if (!sdt.CmdProcessor.TryGetUniqueCommandSlot(out var uniqueCmdSlot)) return;
-
-            sdt.CmdProcessor.AddCommand(uniqueCmdSlot, cmd.Command, cmd.CommandDesc, cmd.SpecialCommandRule, cmd.CommandEvents.ToIl2Cpp(), cmd.PostCommandOutputs.ToIl2Cpp());
-            for (int i = 0; i < cmd.CommandEvents.Count; i++)
-            {
-                var e = cmd.CommandEvents[i];
-                if (e.ChainPuzzle != 0U)
-                {
-                    ChainedPuzzleDataBlock block = GameDataBlockBase<ChainedPuzzleDataBlock>.GetBlock(e.ChainPuzzle);
-                    if (block != null)
-                    {
-                        ChainedPuzzleInstance puzzleInstance = ChainedPuzzleManager.CreatePuzzleInstance(block, sdt.ComputerTerminal.SpawnNode.m_area, sdt.ComputerTerminal.m_wardenObjectiveSecurityScanAlign.position, sdt.ComputerTerminal.m_wardenObjectiveSecurityScanAlign, e.UseStaticBioscanPoints);
-                        var events = cmd.CommandEvents.GetRange(i, cmd.CommandEvents.Count - i).ToIl2Cpp(); // due to the nature of lambda, events cannot be put into System.Action
-                        puzzleInstance.OnPuzzleSolved += new System.Action(() => {
-                            WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(events, eWardenObjectiveEventTrigger.None, true);
-                        });
-
-                        sdt.ComputerTerminal.SetChainPuzzleForCommand(uniqueCmdSlot, i, puzzleInstance);
-                    }
-                }
-            }
-        }
-
-        private void BuildSDT_UniqueCommands(SecDoorTerminal sdt, SecurityDoorTerminalDefinition def)
-        {
-            def.UniqueCommands.ForEach(cmd => AddUniqueCommand(sdt, cmd));
-        }
-
-        private void AddOverrideCommandWithAlarmText(SecDoorTerminal sdt)
-        {
-
-            string command_desc = $"<color=orange>{Text.Get(841)}</color>";
-            
-            if(sdt.LinkedDoorLocks.ChainedPuzzleToSolve != null && sdt.LinkedDoorLocks.ChainedPuzzleToSolve.Data.TriggerAlarmOnActivate)
-            {
-                command_desc = $"<color=orange>{string.Format(Text.Get(840), sdt.LinkedDoorLocks.ChainedPuzzleToSolve?.Data.PublicAlarmName)}</color>";
-            }
-
-            sdt.AddOverrideCommand(OVERRIDE_COMMAND, command_desc);
-        }
 
         private SecDoorTerminal BuildSDT_Instantiation(SecurityDoorTerminalDefinition def)
         {
@@ -123,58 +49,64 @@ namespace EOSExt.SecurityDoorTerminal
             }
 
             targetZone.m_sourceGate.m_linksFrom.m_zone.TerminalsSpawnedInZone.Add(sdt.ComputerTerminal);
-            sdt.BioscanScanSolvedBehaviour = def.Settings.CPSolvedBehaviour;
+            sdt.BioscanScanSolvedBehaviour = CPSolvedBehaviour.AddOpenCommand;
             def.LocalLogFiles.ForEach(log => sdt.ComputerTerminal.AddLocalLog(log, true));
 
+            // === initial state configuration === 
             switch (sdt.LinkedDoor.m_sync.GetCurrentSyncState().status)
             {
                 case eDoorStatus.Closed_LockedWithKeyItem:
-                    // TODO: if sdt is interactable, then inserting key is impossible, and vice ersa
-                    if (!def.Settings.InteractableWhenDoorIsLocked)
+                    if (!def.StateSettings.LockedStateSetting.AccessibleWhenLocked) // SDT default behaviour, won't config
                     {
-                        break; // SDT default behaviour
+                        break; 
                     }
 
+                    // after picking up the key, SDT must be inactive to be able to insert the key
                     sdt.LinkedDoorLocks.m_gateKeyItemNeeded.keyPickupCore.m_interact.add_OnPickedUpByPlayer(new System.Action<Player.PlayerAgent>((p) => {
                         sdt.SetTerminalActive(false);
                     }));
 
-                    sdt.SetTerminalActive(true);
+                    sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenLocked /*true*/ );
                     var hintText = new List<string>() {
                         string.Format($"<color=orange>{Text.Get(849)}</color>", sdt.LinkedDoorLocks.m_gateKeyItemNeeded.PublicName)
                     };
+
                     sdt.ComputerTerminal.m_command.AddOutput(hintText.ToIl2Cpp());
-                    if (def.Settings.AddOverrideCommandWhenDoorUnlocked)
-                    {
-                        sdt.LinkedDoor.m_sync.add_OnDoorStateChange(new System.Action<pDoorState, bool>((state, isDropin) => {
-                            switch (state.status)
-                            {
-                                case eDoorStatus.Closed_LockedWithChainedPuzzle:
-                                case eDoorStatus.Closed_LockedWithChainedPuzzle_Alarm:
-                                case eDoorStatus.Unlocked:
-                                    AddOverrideCommandWithAlarmText(sdt);
-                                    break;
-                            }
-                        }));
-                    }
                     break;
 
                 case eDoorStatus.Closed_LockedWithPowerGenerator:
-                case eDoorStatus.Closed_LockedWithBulkheadDC:
-                case eDoorStatus.Closed_LockedWithNoKey:
-                    sdt.SetTerminalActive(def.Settings.InteractableWhenDoorIsLocked);
-                    if (def.Settings.AddOverrideCommandWhenDoorUnlocked)
+                    sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenLocked);
+                    if (def.StateSettings.LockedStateSetting.AccessibleWhenLocked)
                     {
-                        sdt.LinkedDoor.m_sync.add_OnDoorStateChange(new System.Action<pDoorState, bool>((state, isDropin) => {
-                            switch (state.status)
-                            {
-                                case eDoorStatus.Closed_LockedWithChainedPuzzle:
-                                case eDoorStatus.Closed_LockedWithChainedPuzzle_Alarm:
-                                case eDoorStatus.Unlocked:
-                                    AddOverrideCommandWithAlarmText(sdt);
-                                    break;
-                            }
-                        }));
+                        var _hintText = new List<string>() {
+                            string.Format($"<color=orange>{Text.Get(842)}</color>", sdt.LinkedDoorLocks.m_powerGeneratorNeeded.PublicName)
+                        };
+
+                        sdt.ComputerTerminal.m_command.AddOutput(_hintText.ToIl2Cpp());
+                    }
+                    break;
+
+                case eDoorStatus.Closed_LockedWithBulkheadDC:
+                    sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenLocked);
+                    if (def.StateSettings.LockedStateSetting.AccessibleWhenLocked)
+                    {
+                        var _hintText = new List<string>() {
+                            string.Format($"<color=orange>{Text.Get(842)}</color>", sdt.LinkedDoorLocks.m_powerGeneratorNeeded.PublicName)
+                        };
+
+                        sdt.ComputerTerminal.m_command.AddOutput(_hintText.ToIl2Cpp());
+                    }
+                    break;
+
+                case eDoorStatus.Closed_LockedWithNoKey:
+                    sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenLocked);
+                    if (def.StateSettings.LockedStateSetting.AccessibleWhenLocked)
+                    {
+                        var _hintText = new List<string>() {
+                            string.Format($"<color=orange>{Text.Get(843)}</color>", sdt.LinkedDoorLocks.m_bulkheadDCNeeded.PublicName)
+                        };
+
+                        sdt.ComputerTerminal.m_command.AddOutput(_hintText.ToIl2Cpp());
                     }
                     break;
 
@@ -182,7 +114,47 @@ namespace EOSExt.SecurityDoorTerminal
                 case eDoorStatus.Closed_LockedWithChainedPuzzle:
                 case eDoorStatus.Closed_LockedWithChainedPuzzle_Alarm:
                 case eDoorStatus.Unlocked:
-                    if (def.Settings.AddOverrideCommandWhenDoorUnlocked) AddOverrideCommandWithAlarmText(sdt);
+                    AddOverrideCommandWithAlarmText(sdt); // already unlocked, so add override command 
+                    sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenUnlocked);
+                    break;
+            }
+
+            // === state replicator config === 
+            sdt.LinkedDoor.m_sync.add_OnDoorStateChange(new System.Action<pDoorState, bool>((state, isDropin) => {
+                switch (state.status)
+                {
+                    case eDoorStatus.Closed_LockedWithKeyItem:
+                    case eDoorStatus.Closed_LockedWithPowerGenerator:
+                    case eDoorStatus.Closed_LockedWithBulkheadDC:
+                    case eDoorStatus.Closed_LockedWithNoKey:
+                        sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenLocked);
+                        break;
+
+                    case eDoorStatus.Closed_LockedWithChainedPuzzle:
+                    case eDoorStatus.Closed_LockedWithChainedPuzzle_Alarm:
+                    case eDoorStatus.Unlocked:
+                        sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenUnlocked);
+                        break;
+                }
+            }));
+
+
+            switch (def.StateSettings.OverrideCommandAccessibility)
+            {
+                case OverrideCmdAccess.ALWAYS:
+                    AddOverrideCommandWithAlarmText(sdt);
+                    break;
+                case OverrideCmdAccess.ON_UNLOCK:
+                    sdt.LinkedDoor.m_sync.add_OnDoorStateChange(new System.Action<pDoorState, bool>((state, isDropin) => {
+                        switch (state.status)
+                        {
+                            case eDoorStatus.Closed_LockedWithChainedPuzzle:
+                            case eDoorStatus.Closed_LockedWithChainedPuzzle_Alarm:
+                            case eDoorStatus.Unlocked:
+                                AddOverrideCommandWithAlarmText(sdt);
+                                break;
+                        }
+                    }));
                     break;
             }
             return sdt;
@@ -203,11 +175,6 @@ namespace EOSExt.SecurityDoorTerminal
             }
         }
 
-        private void BuildLevelSDTs_UniqueCommands()
-        {
-            levelSDTs.ForEach((tp) => BuildSDT_UniqueCommands(tp.sdt, tp.def));
-        }
-
         private void OnLevelCleanup()
         {
             levelSDTs.Clear();
@@ -219,10 +186,9 @@ namespace EOSExt.SecurityDoorTerminal
 
             // To make putting password log on SDT a thing, SDT instantiation must be done before FinalLogicLinking
             BatchBuildManager.Current.Add_OnBatchDone(LG_Factory.BatchName.LateCustomObjectCollection, BuildLevelSDTs_Instantiation);
-
             BatchBuildManager.Current.Add_OnBatchDone(LG_Factory.BatchName.FinalLogicLinking, BuildLevelSDTs_Passwords);
-            BatchBuildManager.Current.Add_OnBatchDone(LG_Factory.BatchName.FinalLogicLinking, BuildLevelSDTs_UniqueCommands);
 
+            LevelAPI.OnBuildDone += BuildLevelSDTs_UniqueCommands;
             LevelAPI.OnLevelCleanup += OnLevelCleanup;
         }
 
