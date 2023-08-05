@@ -17,8 +17,8 @@ namespace EOSExt.SecurityDoorTerminal
         private void WardenEvent_AddOverrideCommand(WardenObjectiveEventData e)
         {
             int i = levelSDTs.FindIndex((tp) => {
-                var globalZoneIndex = GlobalZoneIndexOf(tp.sdt);
-                return globalZoneIndex.dimensionIndex == e.DimensionIndex && globalZoneIndex.layerType == e.Layer && globalZoneIndex.localIndex == e.LocalIndex;
+                var linkToNode = tp.sdt.LinkedDoor.Gate.m_linksTo.m_courseNode;
+                return linkToNode.m_dimension.DimensionIndex == e.DimensionIndex && linkToNode.LayerType == e.Layer && linkToNode.m_zone.LocalIndex == e.LocalIndex;
             });
 
             if (i == -1)

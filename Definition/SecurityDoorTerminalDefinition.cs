@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using ExtraObjectiveSetup.BaseClasses.CustomTerminalDefinition;
 using GameData;
 
 namespace EOSExt.SecurityDoorTerminal.Definition
@@ -7,10 +8,6 @@ namespace EOSExt.SecurityDoorTerminal.Definition
     {
         public SDTStateSetting StateSettings { get; set; } = new();
 
-        public List<TerminalLogFileData> LocalLogFiles { set; get; } = new();
-
-        public List<SDTCustomCommand> UniqueCommands { set; get; } = new() { new() };
-
-        public TerminalPasswordData PasswordData { set; get; } = new();
+        public TerminalDefinition TerminalSettings { get; set; } = new();
     }
 }

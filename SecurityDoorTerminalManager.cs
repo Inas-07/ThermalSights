@@ -50,7 +50,7 @@ namespace EOSExt.SecurityDoorTerminal
 
             targetZone.m_sourceGate.m_linksFrom.m_zone.TerminalsSpawnedInZone.Add(sdt.ComputerTerminal);
             sdt.BioscanScanSolvedBehaviour = CPSolvedBehaviour.AddOpenCommand;
-            def.LocalLogFiles.ForEach(log => sdt.ComputerTerminal.AddLocalLog(log, true));
+            def.TerminalSettings.LocalLogFiles.ForEach(log => sdt.ComputerTerminal.AddLocalLog(log, true));
 
             // === initial state configuration === 
             switch (sdt.LinkedDoor.m_sync.GetCurrentSyncState().status)
@@ -114,7 +114,12 @@ namespace EOSExt.SecurityDoorTerminal
                 case eDoorStatus.Closed_LockedWithChainedPuzzle:
                 case eDoorStatus.Closed_LockedWithChainedPuzzle_Alarm:
                 case eDoorStatus.Unlocked:
-                    AddOverrideCommandWithAlarmText(sdt); // already unlocked, so add override command 
+                    // already unlocked, so add override command if its accessibility is not BY_WARDEN_EVENT
+                    if (def.StateSettings.OverrideCommandAccessibility != OverrideCmdAccess.ADDED_BY_WARDEN_EVENT)
+                    {
+                        AddOverrideCommandWithAlarmText(sdt); 
+                    }
+
                     sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenUnlocked);
                     break;
             }
@@ -155,6 +160,8 @@ namespace EOSExt.SecurityDoorTerminal
                                 break;
                         }
                     }));
+                    break;
+                case OverrideCmdAccess.ADDED_BY_WARDEN_EVENT:
                     break;
             }
             return sdt;

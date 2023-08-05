@@ -37,8 +37,6 @@ namespace EOSExt.SecurityDoorTerminal
             base.AddDefinitions(definitions);
         }
 
-        public static (eDimensionIndex dimensionIndex, LG_LayerType layerType, eLocalZoneIndex localIndex) GlobalZoneIndexOf(SecDoorTerminal sdt) => (sdt.SpawnNode.m_dimension.DimensionIndex, sdt.SpawnNode.LayerType, sdt.SpawnNode.m_zone.LocalIndex);
-
         private void AddOverrideCommandWithAlarmText(SecDoorTerminal sdt)
         {
             if (sdt.CmdProcessor.HasRegisteredCommand(SecDoorTerminal.COMMAND_OVERRIDE)) return;
@@ -48,6 +46,12 @@ namespace EOSExt.SecurityDoorTerminal
             if (sdt.LinkedDoorLocks.ChainedPuzzleToSolve != null && sdt.LinkedDoorLocks.ChainedPuzzleToSolve.Data.TriggerAlarmOnActivate)
             {
                 command_desc = $"<color=orange>{string.Format(Text.Get(840), sdt.LinkedDoorLocks.ChainedPuzzleToSolve?.Data.PublicAlarmName)}</color>";
+
+                int idx = command_desc.IndexOf('[');
+                if(idx >= 0 && idx < command_desc.Length)
+                {
+                    command_desc = command_desc.Insert(idx, "\n");
+                }
             }
 
             sdt.AddOverrideCommand(OVERRIDE_COMMAND, command_desc);

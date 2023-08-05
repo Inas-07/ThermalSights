@@ -6,6 +6,7 @@ namespace EOSExt.SecurityDoorTerminal.Definition
     {
         ALWAYS,
         ON_UNLOCK,
+        ADDED_BY_WARDEN_EVENT,
     }
 
     public class SDTStateSetting_Locked
