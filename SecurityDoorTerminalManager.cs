@@ -42,6 +42,7 @@ namespace EOSExt.SecurityDoorTerminal
                 StartingState = TERM_State.Sleeping
             });
 
+            sdt.BioscanScanSolvedBehaviour = def.StateSettings.OnPuzzleSolved;
             if (sdt == null)
             {
                 EOSLogger.Error("Build failed: Can only attach SDT to regular security door");
@@ -49,7 +50,7 @@ namespace EOSExt.SecurityDoorTerminal
             }
 
             targetZone.m_sourceGate.m_linksFrom.m_zone.TerminalsSpawnedInZone.Add(sdt.ComputerTerminal);
-            sdt.BioscanScanSolvedBehaviour = CPSolvedBehaviour.AddOpenCommand;
+            sdt.BioscanScanSolvedBehaviour = def.StateSettings.OnPuzzleSolved;
             def.TerminalSettings.LocalLogFiles.ForEach(log => sdt.ComputerTerminal.AddLocalLog(log, true));
 
             // === initial state configuration === 
@@ -91,7 +92,7 @@ namespace EOSExt.SecurityDoorTerminal
                     if (def.StateSettings.LockedStateSetting.AccessibleWhenLocked)
                     {
                         var _hintText = new List<string>() {
-                            string.Format($"<color=orange>{Text.Get(842)}</color>", sdt.LinkedDoorLocks.m_powerGeneratorNeeded.PublicName)
+                            string.Format($"<color=orange>{Text.Get(843)}</color>", sdt.LinkedDoorLocks.m_bulkheadDCNeeded.PublicName)
                         };
 
                         sdt.ComputerTerminal.m_command.AddOutput(_hintText.ToIl2Cpp());
@@ -103,10 +104,14 @@ namespace EOSExt.SecurityDoorTerminal
                     if (def.StateSettings.LockedStateSetting.AccessibleWhenLocked)
                     {
                         var _hintText = new List<string>() {
-                            string.Format($"<color=orange>{Text.Get(843)}</color>", sdt.LinkedDoorLocks.m_bulkheadDCNeeded.PublicName)
+                            sdt.LinkedDoorLocks.m_intCustomMessage.m_message,
                         };
 
                         sdt.ComputerTerminal.m_command.AddOutput(_hintText.ToIl2Cpp());
+                    }
+                    else
+                    {
+                        sdt.SetCustomMessageActive(true);
                     }
                     break;
 
@@ -133,6 +138,11 @@ namespace EOSExt.SecurityDoorTerminal
                     case eDoorStatus.Closed_LockedWithBulkheadDC:
                     case eDoorStatus.Closed_LockedWithNoKey:
                         sdt.SetTerminalActive(def.StateSettings.LockedStateSetting.AccessibleWhenLocked);
+                        if(state.status == eDoorStatus.Closed_LockedWithNoKey)
+                        {
+                            sdt.SetCustomMessageActive(true);
+                        }
+
                         break;
 
                     case eDoorStatus.Closed_LockedWithChainedPuzzle:

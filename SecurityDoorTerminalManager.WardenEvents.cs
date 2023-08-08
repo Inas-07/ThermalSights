@@ -30,7 +30,7 @@ namespace EOSExt.SecurityDoorTerminal
             var targetSDT = levelSDTs[i].sdt;
 
             AddOverrideCommandWithAlarmText(targetSDT);
-            EOSLogger.Debug($"SDT_AddOverrideCommand: add for SDT {(e.DimensionIndex, e.Layer, e.LocalIndex)}");
+            EOSLogger.Debug($"SDT_AddOverrideCommand: added for SDT {(e.DimensionIndex, e.Layer, e.LocalIndex)}");
         }
     }
 }

@@ -21,5 +21,7 @@ namespace EOSExt.SecurityDoorTerminal.Definition
         public SDTStateSetting_Locked LockedStateSetting { get; set; } = new();
 
         public OverrideCmdAccess OverrideCommandAccessibility { get; set; } = OverrideCmdAccess.ON_UNLOCK;
+        
+        public CPSolvedBehaviour OnPuzzleSolved { get; set; } = CPSolvedBehaviour.AddOpenCommand;
     }
 }
