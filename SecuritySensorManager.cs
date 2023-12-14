@@ -39,7 +39,7 @@ namespace EOSExt.SecuritySensor
 
             foreach(var sensorSetting in sensorGroupSettings.SensorGroup) 
             {
-                var position = sensorSetting.Position.ToVector3();
+                var position = sensorSetting.Position.ToVector3(); 
                 if (position == Vector3.zeroVector) continue;
 
                 GameObject sensorGO = UnityEngine.Object.Instantiate(Assets.SecuritySensor);
