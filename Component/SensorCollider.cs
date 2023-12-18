@@ -19,11 +19,14 @@ namespace EOSExt.SecuritySensor.Component
 
         private SensorSettings sensorSettings;
 
+        private Vector3 Position;
+
         private int last_playersInSensor = 0;
 
         internal void Setup(SensorSettings sensorSettings)
         {
             this.sensorSettings = sensorSettings;
+            this.Position = sensorSettings.Position.ToVector3();
         }
 
         void Update()
@@ -38,7 +41,7 @@ namespace EOSExt.SecuritySensor.Component
             {
                 if (player.Owner.IsBot || !player.Alive) continue;
 
-                if((gameObject.transform.position - player.Position).magnitude < sensorSettings.Radius)
+                if((this.Position - player.Position).magnitude < sensorSettings.Radius)
                 {
                     current_playersInSensor++;
                 }

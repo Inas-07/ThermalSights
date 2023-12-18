@@ -13,6 +13,7 @@ using GameData;
 using ExtraObjectiveSetup.ExtendedWardenEvents;
 using GTFO.API.Utilities;
 using UnityEngine.UI;
+using TMPro;
 
 namespace EOSExt.SecuritySensor
 {
@@ -25,7 +26,7 @@ namespace EOSExt.SecuritySensor
     {
         public static SecuritySensorManager Current { get; private set; } = new();
 
-        private List<(SensorGroupSettings settings, List<GameObject> sensorGO)> securitySensors = new();
+        private List<(SensorGroupSettings settings, SensorGroup sensorGroup)> securitySensorGroups = new();
 
         private Dictionary<IntPtr, int> sensorGroupIndex = new();
 
@@ -33,45 +34,32 @@ namespace EOSExt.SecuritySensor
 
         public void BuildSensorGroup(SensorGroupSettings sensorGroupSettings)
         {
-            List<GameObject> GOSensorGroup = new();
-            int groupIndex = securitySensors.Count;
-            securitySensors.Add((sensorGroupSettings, GOSensorGroup));
-
-            foreach(var sensorSetting in sensorGroupSettings.SensorGroup) 
+            int groupIndex = securitySensorGroups.Count;
+            var sg = SensorGroup.Instantiate(sensorGroupSettings, groupIndex);
+            securitySensorGroups.Add((sensorGroupSettings, sg));
+            
+            foreach (var go in sg.SensorGOs)
             {
-                var position = sensorSetting.Position.ToVector3(); 
-                if (position == Vector3.zeroVector) continue;
-
-                GameObject sensorGO = UnityEngine.Object.Instantiate(Assets.SecuritySensor);
-                CP_Bioscan_Graphics graphics = sensorGO.GetComponent<CP_Bioscan_Graphics>();
-                graphics.m_radius = sensorSetting.Radius;
-                //position.y += graphics.m_height / 2;
-
-                sensorGO.transform.SetPositionAndRotation(position, Quaternion.identityQuaternion);
-                GOSensorGroup.Add(sensorGO);
-                sensorGroupIndex[sensorGO.Pointer] = groupIndex;
-
-                graphics.Setup();
-                graphics.SetColor(sensorGroupSettings.Color.toColor());
-                //graphics.m_zoneMaterialInstance.
-                graphics.SetVisible(true);
-
-                var sensorCollider = sensorGO.AddComponent<SensorCollider>();
-                sensorCollider.Setup(sensorSetting);
-                sensorGO.SetActive(true);
+                sensorGroupIndex[go.Pointer] = groupIndex;
             }
         }
 
         internal void TriggerSensor(IntPtr pointer)
         {
+            if(!sensorGroupIndex.ContainsKey(pointer))
+            {
+                EOSLogger.Error($"Triggering a sensor but doesn't find its corresponding sensor group! This should not happen!");
+                return;
+            }
+
             int groupIndex = sensorGroupIndex[pointer];
-            if(groupIndex < 0 || groupIndex >= securitySensors.Count)
+            if(groupIndex < 0 || groupIndex >= securitySensorGroups.Count)
             {
                 EOSLogger.Error($"TriggerSensor: invalid SensorGroup index {groupIndex}");
                 return;
             }
 
-            securitySensors[groupIndex]
+            securitySensorGroups[groupIndex]
                 .settings
                 .EventsOnTrigger
                 .ForEach(e => WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(e, e.Trigger, true));
@@ -86,7 +74,9 @@ namespace EOSExt.SecuritySensor
 
         private void Clear()
         {
-            securitySensors.Clear();
+            securitySensorGroups.ForEach(builtSensorGroup => builtSensorGroup.sensorGroup.Destroy());
+
+            securitySensorGroups.Clear();
             sensorGroupIndex.Clear();
         }
 
@@ -94,14 +84,13 @@ namespace EOSExt.SecuritySensor
         {
             int groupIndex = e.Count;
             bool active = e.Enabled;
-            if(groupIndex < 0 || groupIndex >= securitySensors.Count)
+            if(groupIndex < 0 || groupIndex >= securitySensorGroups.Count)
             {
                 EOSLogger.Error($"ToggleSensorGroup: invalid SensorGroup index {groupIndex}");
                 return;
             }
 
-            securitySensors[groupIndex].sensorGO.ForEach(go => go.SetActive(active));
-            EOSLogger.Warning($"ToggleSensorGroup: SensorGroup_{groupIndex} toggled state to {active}");
+            securitySensorGroups[groupIndex].sensorGroup.ChangeState(active ? ActiveState.ENABLED : ActiveState.DISABLED);
         }
 
         protected override void FileChanged(LiveEditEventArgs e)
@@ -147,11 +136,8 @@ namespace EOSExt.SecuritySensor
 
         private SecuritySensorManager() : base()
         {
-            LevelAPI.OnBuildStart += Clear;
+            LevelAPI.OnBuildStart += () => { Clear(); BuildSecuritySensor(); };
             LevelAPI.OnLevelCleanup += Clear;
-
-            LevelAPI.OnBuildDone += BuildSecuritySensor;
-            //BatchBuildManager.Current.Add_OnBatchDone(LG_Factory.BatchName., BuildSecuritySensor);
 
             EOSWardenEventManager.Current.AddEventDefinition(SensorEventType.ToggleSensorGroupState.ToString(), (int)SensorEventType.ToggleSensorGroupState, ToggleSensorGroup);
         }

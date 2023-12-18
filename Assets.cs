@@ -9,7 +9,7 @@ namespace EOSExt.SecuritySensor
 
         public static void Init()
         {
-            SecuritySensor = AssetAPI.GetLoadedAsset<GameObject>("Assets/SecuritySensor/OctagonSensor.prefab");
+            SecuritySensor = AssetAPI.GetLoadedAsset<GameObject>("Assets/SecuritySensor/CircleSensor.prefab");
         }
     }
 }
