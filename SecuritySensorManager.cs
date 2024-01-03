@@ -14,6 +14,7 @@ using ExtraObjectiveSetup.ExtendedWardenEvents;
 using GTFO.API.Utilities;
 using UnityEngine.UI;
 using TMPro;
+using SNetwork;
 
 namespace EOSExt.SecuritySensor
 {
@@ -82,6 +83,8 @@ namespace EOSExt.SecuritySensor
 
         private void ToggleSensorGroup(WardenObjectiveEventData e)
         {
+            if (!SNet.IsMaster) return;
+
             int groupIndex = e.Count;
             bool active = e.Enabled;
             if(groupIndex < 0 || groupIndex >= securitySensorGroups.Count)
@@ -138,6 +141,10 @@ namespace EOSExt.SecuritySensor
         {
             LevelAPI.OnBuildStart += () => { Clear(); BuildSecuritySensor(); };
             LevelAPI.OnLevelCleanup += Clear;
+
+            EventAPI.OnExpeditionStarted += () => {
+                securitySensorGroups.ForEach(tuple => tuple.sensorGroup.StartMovingMovables());
+            };
 
             EOSWardenEventManager.Current.AddEventDefinition(SensorEventType.ToggleSensorGroupState.ToString(), (int)SensorEventType.ToggleSensorGroupState, ToggleSensorGroup);
         }

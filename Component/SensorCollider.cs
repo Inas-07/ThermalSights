@@ -1,12 +1,7 @@
-﻿using EOSExt.SecuritySensor.Definition;
-using LevelGeneration;
+﻿using ChainedPuzzles;
+using EOSExt.SecuritySensor.Definition;
 using Player;
 using SNetwork;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace EOSExt.SecuritySensor.Component
@@ -19,14 +14,13 @@ namespace EOSExt.SecuritySensor.Component
 
         private SensorSettings sensorSettings;
 
-        private Vector3 Position;
+        private Vector3 Position => gameObject.transform.position;
 
         private int last_playersInSensor = 0;
 
         internal void Setup(SensorSettings sensorSettings)
         {
             this.sensorSettings = sensorSettings;
-            this.Position = sensorSettings.Position.ToVector3();
         }
 
         void Update()
