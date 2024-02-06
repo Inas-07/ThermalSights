@@ -43,6 +43,13 @@ namespace EOSExt.SecuritySensor
             {
                 sensorGroupIndex[go.Pointer] = groupIndex;
             }
+
+            foreach (var m in sg.MovableSensors)
+            {
+                sensorGroupIndex[m.movableGO.Pointer] = groupIndex;
+            }
+
+            EOSLogger.Debug($"SensorGroup_{groupIndex} built");
         }
 
         internal void TriggerSensor(IntPtr pointer)
@@ -60,8 +67,15 @@ namespace EOSExt.SecuritySensor
                 return;
             }
 
-            securitySensorGroups[groupIndex]
-                .settings
+            var sg = securitySensorGroups[groupIndex];
+            // MovableSensor would trigger `SensorCollider` cuz its game object is not (and cannot) set to inactive
+            // So do some special case handling here
+            if (sg.sensorGroup.StateReplicator.State.status != ActiveState.ENABLED)
+            {
+                return; 
+            }
+
+            sg.settings
                 .EventsOnTrigger
                 .ForEach(e => WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(e, e.Trigger, true));
             EOSLogger.Warning($"TriggerSensor: SensorGroup_{groupIndex} triggered");
@@ -83,8 +97,6 @@ namespace EOSExt.SecuritySensor
 
         private void ToggleSensorGroup(WardenObjectiveEventData e)
         {
-            if (!SNet.IsMaster) return;
-
             int groupIndex = e.Count;
             bool active = e.Enabled;
             if(groupIndex < 0 || groupIndex >= securitySensorGroups.Count)
@@ -94,47 +106,6 @@ namespace EOSExt.SecuritySensor
             }
 
             securitySensorGroups[groupIndex].sensorGroup.ChangeState(active ? ActiveState.ENABLED : ActiveState.DISABLED);
-        }
-
-        protected override void FileChanged(LiveEditEventArgs e)
-        {
-            base.FileChanged(e);
-
-            //if (GameStateManager.CurrentStateName != eGameStateName.InLevel 
-            //    || !definitions.ContainsKey(RundownManager.ActiveExpedition.LevelLayoutData)) return;
-
-            //var def = definitions[RundownManager.ActiveExpedition.LevelLayoutData].Definitions;
-            //if (def.Count != securitySensors.Count) return;
-            //for(int i = 0; i < securitySensors.Count; i++)
-            //{
-            //    var builtSettings = securitySensors[i].settings;
-            //    if (def[i].SensorGroup.Count != builtSettings.SensorGroup.Count) return;   
-            //}
-
-            //for(int i = 0; i < securitySensors.Count; i++)
-            //{
-            //    var builtSensorGroup = securitySensors[i];
-            //    builtSensorGroup.settings = def[i];
-            //    for(int j = 0; j < builtSensorGroup.sensorGO.Count; j++)
-            //    {
-            //        var sensorSettings = builtSensorGroup.settings.SensorGroup[j];
-            //        var position = sensorSettings.Position.ToVector3();
-            //        if (position == Vector3.zeroVector) continue;
-
-            //        var sensorGO = builtSensorGroup.sensorGO[j];
-
-            //        CP_Bioscan_Graphics graphics = sensorGO.GetComponent<CP_Bioscan_Graphics>();
-            //        //position.y += graphics.m_height / 2;
-            //        sensorGO.transform.SetPositionAndRotation(position, Quaternion.identityQuaternion);
-
-            //        graphics.SetColor(sensorSettings.Color.toColor());
-            //        graphics.m_radius = sensorSettings.Radius;
-            //        graphics.Setup();
-            //        graphics.SetVisible(true);
-            //    }
-            //}
-
-            //EOSLogger.Debug($"Live-Updated SensorSettings");
         }
 
         private SecuritySensorManager() : base()

@@ -8,31 +8,15 @@ using ExtraObjectiveSetup.Utils;
 using FloLib.Networks.Replications;
 using GTFO.API.Extensions;
 using UnityEngine;
+using SNetwork;
 
 namespace EOSExt.SecuritySensor
 {
-    public enum ActiveState
-    {
-        DISABLED,
-        ENABLED,
-    }
-
-    public struct SensorGroupState
-    {
-        public ActiveState status;
-
-        public SensorGroupState() { }
-
-        public SensorGroupState(SensorGroupState o) { status = o.status; }
-
-        public SensorGroupState(ActiveState status) {  this.status = status; }
-    }
-
     internal class SensorGroup
     {
         private List<GameObject> GOSensorGroup = new();
 
-        private List<CP_BasicMovable> MovableComps = new();
+        private List<MovableSensor> movableSensors = new();
 
         public int sensorGroupIndex { get; private set; }
 
@@ -40,17 +24,32 @@ namespace EOSExt.SecuritySensor
 
         public IEnumerable<GameObject> SensorGOs => GOSensorGroup;
 
-        public IEnumerable<CP_BasicMovable> MovableSensorCPs => MovableComps;
+        public IEnumerable<MovableSensor> MovableSensors => movableSensors; // TODO: position sync of movable
 
-        public void ChangeState(ActiveState status)
+        public void ChangeState(ActiveState status) // TODO: has undone last commit. events for changing ss state is executed, but state is not changed????
         {
+            switch (status)
+            {
+                case ActiveState.ENABLED:
+                    GOSensorGroup.ForEach(sensorGO => sensorGO.SetActiveRecursively(true));
+                    ResumeMovingMovables();
+                    break;
+                case ActiveState.DISABLED:
+                    PauseMovingMovables();
+                    GOSensorGroup.ForEach(sensorGO => sensorGO.SetActiveRecursively(false));
+                    break;
+            }
+            EOSLogger.Debug($"ChangeState: SecuritySensorGroup_{sensorGroupIndex} changed to state {status}");
 
             StateReplicator.SetState(new() { status = status });
         }
+
         private void OnStateChanged(SensorGroupState oldState, SensorGroupState newState, bool isRecall)
         {
+            EOSLogger.Warning($"OnStateChanged: isRecall ? {isRecall}");
+
             if (!isRecall) return;
-            EOSLogger.Debug($"SecuritySensorGroup_{sensorGroupIndex} changed to state {newState.status}");
+            EOSLogger.Debug($"Recalling: SecuritySensorGroup_{sensorGroupIndex} changed to state {newState.status}");
             switch (newState.status)
             {
                 case ActiveState.ENABLED:
@@ -79,20 +78,18 @@ namespace EOSExt.SecuritySensor
                 {
                     case SensorType.BASIC:
                         sensorGO = Object.Instantiate(Assets.CircleSensor);
+                        sg.GOSensorGroup.Add(sensorGO);
                         break;
                     case SensorType.MOVABLE:
-                        sensorGO = Object.Instantiate(Assets.MovableSensor);
-                        var movingComp = sensorGO.GetComponent<CP_BasicMovable>();
-                        movingComp.Setup();
-
-                        var ScanPositions = sensorSetting.MovingPosition.Prepend(sensorSetting.Position).ToList().ConvertAll(vec3 => vec3.ToVector3()).ToIl2Cpp();
-                        movingComp.ScanPositions = ScanPositions;
-                        movingComp.m_amountOfPositions = sensorSetting.MovingPosition.Count;
-                        if(sensorSetting.MovingSpeedMulti > 0)
+                        var movableSensor = MovableSensor.Instantiate(sensorSetting);
+                        if(movableSensor == null)
                         {
-                            movingComp.m_movementSpeed *= sensorSetting.MovingSpeedMulti;
+                            EOSLogger.Error($"ERROR: failed to build movable sensor");
+                            continue;
                         }
-                        sg.MovableComps.Add(movingComp); 
+                        sensorGO = movableSensor.movableGO;
+
+                        sg.movableSensors.Add(movableSensor);
                         break;
                     default:
                         EOSLogger.Error($"Unsupported SensorType {sensorSetting.SensorType}, skipped");
@@ -100,8 +97,6 @@ namespace EOSExt.SecuritySensor
                 }
 
                 sensorGO.transform.SetPositionAndRotation(position, Quaternion.identityQuaternion);
-                sg.GOSensorGroup.Add(sensorGO);
-                //sensorGroupIndex[sensorGO.Pointer] = groupIndex;
 
                 float height = 0.6f / 3.7f;
                 sensorGO.transform.localScale = new Vector3(sensorSetting.Radius, sensorSetting.Radius, sensorSetting.Radius);
@@ -126,17 +121,19 @@ namespace EOSExt.SecuritySensor
             return sg;
         }
 
-        public void StartMovingMovables() => MovableComps.ForEach(movable => movable.StartMoving());
+        public void StartMovingMovables() => movableSensors.ForEach(movable => movable.StartMoving());
 
-        public void PauseMovingMovables() => MovableComps.ForEach(movable => movable.StopMoving());
+        public void PauseMovingMovables() => movableSensors.ForEach(movable => movable.PauseMoving());
 
-        public void ResumeMovingMovables() => MovableComps.ForEach(movable => movable.StartMoving());
+        public void ResumeMovingMovables() => movableSensors.ForEach(movable => movable.ResumeMoving());
 
         public void Destroy()
         {
-            GOSensorGroup.ForEach(GameObject.Destroy);
+            GOSensorGroup.ForEach(Object.Destroy);
             GOSensorGroup.Clear();
-            MovableComps.Clear();
+            movableSensors.ForEach(m => m.Destroy());
+            movableSensors.Clear();
+            StateReplicator = null;
         }
 
         private SensorGroup() { }
