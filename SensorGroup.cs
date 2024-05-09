@@ -49,13 +49,13 @@ namespace EOSExt.SecuritySensor
                 EOSLogger.Debug($"Recalling: SecuritySensorGroup_{SensorGroupIndex} changed to state {newState.status}");
                 ChangeToStateUnsynced(newState);
             }
-            //else
-            //{
-            //    if(oldState.status != newState.status) // synced state from host if sth went wrong on local compute
-            //    {
-            //        ChangeToStateUnsynced(newState);
-            //    }
-            //}
+            else
+            {
+                if (oldState.status != newState.status) // synced state from host if sth went wrong on local compute
+                {
+                    ChangeToStateUnsynced(newState);
+                }
+            }
         }
 
         private void ChangeToStateUnsynced(SensorGroupState newState)

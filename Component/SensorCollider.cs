@@ -45,7 +45,7 @@ namespace EOSExt.SecuritySensor.Component
 
             if (current_playersInSensor > last_playersInSensor)
             {
-                SecuritySensorManager.Current.TriggerSensor(gameObject.Pointer);
+                SecuritySensorManager.Current.SensorTriggered(gameObject.Pointer);
             }
 
             last_playersInSensor = current_playersInSensor;

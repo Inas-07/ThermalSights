@@ -52,7 +52,7 @@ namespace EOSExt.SecuritySensor
             EOSLogger.Debug($"SensorGroup_{groupIndex} built");
         }
 
-        internal void TriggerSensor(IntPtr pointer)
+        internal void SensorTriggered(IntPtr pointer)
         {
             if(!sensorGroupIndex.ContainsKey(pointer))
             {
