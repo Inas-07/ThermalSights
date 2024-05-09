@@ -12,53 +12,63 @@ using SNetwork;
 
 namespace EOSExt.SecuritySensor
 {
-    internal class SensorGroup
+    public class SensorGroup
     {
-        private List<GameObject> GOSensorGroup = new();
+        private List<GameObject> basicSensors = new();
 
         private List<MovableSensor> movableSensors = new();
 
-        public int sensorGroupIndex { get; private set; }
+        public int SensorGroupIndex { get; private set; }
+
+        public SensorGroupSettings Settings { get; private set; }
 
         public StateReplicator<SensorGroupState> StateReplicator { get; private set; }
 
-        public IEnumerable<GameObject> SensorGOs => GOSensorGroup;
+        public IEnumerable<GameObject> BasicSensors => basicSensors;
 
         public IEnumerable<MovableSensor> MovableSensors => movableSensors; // TODO: position sync of movable
 
-        public void ChangeState(ActiveState status) // TODO: has undone last commit. events for changing ss state is executed, but state is not changed????
-        {
-            switch (status)
-            {
-                case ActiveState.ENABLED:
-                    GOSensorGroup.ForEach(sensorGO => sensorGO.SetActiveRecursively(true));
-                    ResumeMovingMovables();
-                    break;
-                case ActiveState.DISABLED:
-                    PauseMovingMovables();
-                    GOSensorGroup.ForEach(sensorGO => sensorGO.SetActiveRecursively(false));
-                    break;
-            }
-            EOSLogger.Debug($"ChangeState: SecuritySensorGroup_{sensorGroupIndex} changed to state {status}");
+        public ActiveState State => StateReplicator?.State.status ?? ActiveState.ENABLED;
 
-            StateReplicator.SetState(new() { status = status });
+        public void ChangeToState(ActiveState status) // TODO: has undone last commit. events for changing ss state is executed, but state is not changed????
+        {
+            ChangeToStateUnsynced(new() { status = status });
+            EOSLogger.Debug($"ChangeState: SecuritySensorGroup_{SensorGroupIndex} changed to state {status}");
+            if(SNet.IsMaster)
+            {
+                StateReplicator?.SetState(new() { status = status });
+            }
         }
 
         private void OnStateChanged(SensorGroupState oldState, SensorGroupState newState, bool isRecall)
         {
             EOSLogger.Warning($"OnStateChanged: isRecall ? {isRecall}");
 
-            if (!isRecall) return;
-            EOSLogger.Debug($"Recalling: SecuritySensorGroup_{sensorGroupIndex} changed to state {newState.status}");
+            if (isRecall)
+            {
+                EOSLogger.Debug($"Recalling: SecuritySensorGroup_{SensorGroupIndex} changed to state {newState.status}");
+                ChangeToStateUnsynced(newState);
+            }
+            //else
+            //{
+            //    if(oldState.status != newState.status) // synced state from host if sth went wrong on local compute
+            //    {
+            //        ChangeToStateUnsynced(newState);
+            //    }
+            //}
+        }
+
+        private void ChangeToStateUnsynced(SensorGroupState newState)
+        {
             switch (newState.status)
             {
                 case ActiveState.ENABLED:
-                    GOSensorGroup.ForEach(sensorGO => sensorGO.SetActiveRecursively(true));
+                    basicSensors.ForEach(sensorGO => sensorGO.SetActive(true));
                     ResumeMovingMovables();
                     break;
                 case ActiveState.DISABLED:
                     PauseMovingMovables();
-                    GOSensorGroup.ForEach(sensorGO => sensorGO.SetActiveRecursively(false));
+                    basicSensors.ForEach(sensorGO => sensorGO.SetActive(false));
                     break;
             }
         }
@@ -66,7 +76,8 @@ namespace EOSExt.SecuritySensor
         public static SensorGroup Instantiate(SensorGroupSettings sensorGroupSettings, int sensorGroupIndex)
         {
             SensorGroup sg = new SensorGroup();
-            sg.sensorGroupIndex = sensorGroupIndex;
+            sg.SensorGroupIndex = sensorGroupIndex;
+            sg.Settings = sensorGroupSettings;
 
             foreach (var sensorSetting in sensorGroupSettings.SensorGroup)
             {
@@ -78,7 +89,7 @@ namespace EOSExt.SecuritySensor
                 {
                     case SensorType.BASIC:
                         sensorGO = Object.Instantiate(Assets.CircleSensor);
-                        sg.GOSensorGroup.Add(sensorGO);
+                        sg.basicSensors.Add(sensorGO);
                         break;
                     case SensorType.MOVABLE:
                         var movableSensor = MovableSensor.Instantiate(sensorSetting);
@@ -103,7 +114,7 @@ namespace EOSExt.SecuritySensor
                 sensorGO.transform.localPosition += Vector3.up * height;
 
                 var sensorCollider = sensorGO.AddComponent<SensorCollider>();
-                sensorCollider.Setup(sensorSetting);
+                sensorCollider.Setup(sensorSetting, sg);
                 sensorGO.SetActive(true);
             }
 
@@ -129,11 +140,12 @@ namespace EOSExt.SecuritySensor
 
         public void Destroy()
         {
-            GOSensorGroup.ForEach(Object.Destroy);
-            GOSensorGroup.Clear();
+            basicSensors.ForEach(Object.Destroy);
+            basicSensors.Clear();
             movableSensors.ForEach(m => m.Destroy());
             movableSensors.Clear();
             StateReplicator = null;
+            Settings = null;
         }
 
         private SensorGroup() { }

@@ -27,7 +27,7 @@ namespace EOSExt.SecuritySensor
     {
         public static SecuritySensorManager Current { get; private set; } = new();
 
-        private List<(SensorGroupSettings settings, SensorGroup sensorGroup)> securitySensorGroups = new();
+        private List<SensorGroup> sensorGroups = new();
 
         private Dictionary<IntPtr, int> sensorGroupIndex = new();
 
@@ -35,11 +35,11 @@ namespace EOSExt.SecuritySensor
 
         public void BuildSensorGroup(SensorGroupSettings sensorGroupSettings)
         {
-            int groupIndex = securitySensorGroups.Count;
+            int groupIndex = sensorGroups.Count;
             var sg = SensorGroup.Instantiate(sensorGroupSettings, groupIndex);
-            securitySensorGroups.Add((sensorGroupSettings, sg));
+            sensorGroups.Add(sg);
             
-            foreach (var go in sg.SensorGOs)
+            foreach (var go in sg.BasicSensors)
             {
                 sensorGroupIndex[go.Pointer] = groupIndex;
             }
@@ -61,21 +61,21 @@ namespace EOSExt.SecuritySensor
             }
 
             int groupIndex = sensorGroupIndex[pointer];
-            if(groupIndex < 0 || groupIndex >= securitySensorGroups.Count)
+            if(groupIndex < 0 || groupIndex >= sensorGroups.Count)
             {
                 EOSLogger.Error($"TriggerSensor: invalid SensorGroup index {groupIndex}");
                 return;
             }
 
-            var sg = securitySensorGroups[groupIndex];
-            // MovableSensor would trigger `SensorCollider` cuz its game object is not (and cannot) set to inactive
-            // So do some special case handling here
-            if (sg.sensorGroup.StateReplicator.State.status != ActiveState.ENABLED)
-            {
-                return; 
-            }
+            var sg = sensorGroups[groupIndex];
+            //// MovableSensor would trigger `SensorCollider` cuz its game object is not (and cannot) set to inactive
+            //// So do some special case handling here
+            //if (sg.sensorGroup.StateReplicator.State.status != ActiveState.ENABLED)
+            //{
+            //    return; 
+            //}
 
-            sg.settings
+            sg.Settings
                 .EventsOnTrigger
                 .ForEach(e => WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(e, e.Trigger, true));
             EOSLogger.Warning($"TriggerSensor: SensorGroup_{groupIndex} triggered");
@@ -89,9 +89,8 @@ namespace EOSExt.SecuritySensor
 
         private void Clear()
         {
-            securitySensorGroups.ForEach(builtSensorGroup => builtSensorGroup.sensorGroup.Destroy());
-
-            securitySensorGroups.Clear();
+            sensorGroups.ForEach(sg => sg.Destroy());
+            sensorGroups.Clear();
             sensorGroupIndex.Clear();
         }
 
@@ -99,13 +98,13 @@ namespace EOSExt.SecuritySensor
         {
             int groupIndex = e.Count;
             bool active = e.Enabled;
-            if(groupIndex < 0 || groupIndex >= securitySensorGroups.Count)
+            if(groupIndex < 0 || groupIndex >= sensorGroups.Count)
             {
                 EOSLogger.Error($"ToggleSensorGroup: invalid SensorGroup index {groupIndex}");
                 return;
             }
 
-            securitySensorGroups[groupIndex].sensorGroup.ChangeState(active ? ActiveState.ENABLED : ActiveState.DISABLED);
+            sensorGroups[groupIndex].ChangeToState(active ? ActiveState.ENABLED : ActiveState.DISABLED);
         }
 
         private SecuritySensorManager() : base()
@@ -114,7 +113,7 @@ namespace EOSExt.SecuritySensor
             LevelAPI.OnLevelCleanup += Clear;
 
             EventAPI.OnExpeditionStarted += () => {
-                securitySensorGroups.ForEach(tuple => tuple.sensorGroup.StartMovingMovables());
+                sensorGroups.ForEach(sg => sg.StartMovingMovables());
             };
 
             EOSWardenEventManager.Current.AddEventDefinition(SensorEventType.ToggleSensorGroupState.ToString(), (int)SensorEventType.ToggleSensorGroupState, ToggleSensorGroup);

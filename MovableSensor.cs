@@ -2,15 +2,14 @@
 using EOSExt.SecuritySensor.Definition;
 using ExtraObjectiveSetup.Utils;
 using ExtraObjectiveSetup;
-using FloLib.Networks.Replications;
-using SNetwork;
 using System.Linq;
 using UnityEngine;
 using GTFO.API.Extensions;
 
+
 namespace EOSExt.SecuritySensor
 {
-    internal class MovableSensor
+    public class MovableSensor
     {
         public GameObject movableGO { get; private set; }
 
@@ -20,6 +19,12 @@ namespace EOSExt.SecuritySensor
 
         public static MovableSensor Instantiate(SensorSettings sensorSetting)
         {
+            if(sensorSetting.MovingPosition.Count < 1)
+            {
+                EOSLogger.Error($"SensorGroup.Instantiate: At least 1 moving position required to setup T-Sensor!");
+                return null;
+            }
+
             uint movableRID = EOSNetworking.AllotReplicatorID();
             if (movableRID == EOSNetworking.INVALID_ID)
             {
@@ -33,12 +38,23 @@ namespace EOSExt.SecuritySensor
             ms.movingComp = ms.movableGO.GetComponent<CP_BasicMovable>();
             ms.movingComp.Setup();
 
-            var ScanPositions = sensorSetting.MovingPosition
-                .Prepend(sensorSetting.Position)
-                .Append(sensorSetting.Position)
-                .ToList().ConvertAll(vec3 => vec3.ToVector3()).ToIl2Cpp();
-            ms.movingComp.ScanPositions = ScanPositions;
-            ms.movingComp.m_amountOfPositions = sensorSetting.MovingPosition.Count;
+            var StartPosition = sensorSetting.Position.ToVector3();
+            var FirstPosition = sensorSetting.MovingPosition.First().ToVector3();
+            var LastPosition = sensorSetting.MovingPosition.Last().ToVector3();
+
+            var ScanPositions = sensorSetting.MovingPosition.ConvertAll(e => e.ToVector3()).AsEnumerable();
+            if (!StartPosition.Equals(FirstPosition))
+            {
+                ScanPositions = ScanPositions.Prepend(StartPosition);
+            }
+
+            if (!StartPosition.Equals(LastPosition))
+            {
+                ScanPositions = ScanPositions.Append(StartPosition);
+            }
+
+            ms.movingComp.ScanPositions = ScanPositions.ToList().ToIl2Cpp();
+            ms.movingComp.m_amountOfPositions = ScanPositions.Count() - 1; // I'm not pretty sure why, but this is actually needed
             if (sensorSetting.MovingSpeedMulti > 0)
             {
                 ms.movingComp.m_movementSpeed *= sensorSetting.MovingSpeedMulti;

@@ -1,26 +1,27 @@
-﻿using ChainedPuzzles;
-using EOSExt.SecuritySensor.Definition;
+﻿using EOSExt.SecuritySensor.Definition;
 using Player;
-using SNetwork;
 using UnityEngine;
 
 namespace EOSExt.SecuritySensor.Component
 {
-    public class SensorCollider: MonoBehaviour
+    public class SensorCollider : MonoBehaviour
     {
         public static float CHECK_INTERVAL { get; } = 0.1f;
 
         private float nextCheckTime = float.NaN;
 
-        private SensorSettings sensorSettings;
+        private SensorSettings settings;
 
         private Vector3 Position => gameObject.transform.position;
 
         private int last_playersInSensor = 0;
 
-        internal void Setup(SensorSettings sensorSettings)
+        public SensorGroup Parent { get; internal set; }
+
+        internal void Setup(SensorSettings sensorSettings, SensorGroup parent)
         {
-            this.sensorSettings = sensorSettings;
+            this.settings = sensorSettings;
+            this.Parent = parent;
         }
 
         void Update()
@@ -28,14 +29,15 @@ namespace EOSExt.SecuritySensor.Component
             if (GameStateManager.CurrentStateName != eGameStateName.InLevel) return;
 
             if (!float.IsNaN(nextCheckTime) && Clock.Time < nextCheckTime) return;
-
             nextCheckTime = Clock.Time + CHECK_INTERVAL;
+            if (Parent.State != ActiveState.ENABLED) return;
+
             int current_playersInSensor = 0; 
             foreach (var player in PlayerManager.PlayerAgentsInLevel)
             {
                 if (player.Owner.IsBot || !player.Alive) continue;
 
-                if((this.Position - player.Position).magnitude < sensorSettings.Radius)
+                if((this.Position - player.Position).magnitude < settings.Radius)
                 {
                     current_playersInSensor++;
                 }
@@ -47,6 +49,12 @@ namespace EOSExt.SecuritySensor.Component
             }
 
             last_playersInSensor = current_playersInSensor;
+        }
+
+        void OnDestroy()
+        {
+            Parent = null;
+            settings = null;
         }
     }
 }
