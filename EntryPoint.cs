@@ -4,10 +4,8 @@ using ExtraObjectiveSetup.Utils;
 using ExtraObjectiveSetup.JSON;
 using GTFO.API;
 using HarmonyLib;
-using Il2CppInterop.Runtime.Injection;
-using EOSExt.SecuritySensor.Component;
 
-namespace EOSExt.SecuritySensor
+namespace EOSExt.SecDoor
 {
     [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("GTFO.FloLib", BepInDependency.DependencyFlags.HardDependency)]
@@ -19,21 +17,19 @@ namespace EOSExt.SecuritySensor
     public class EntryPoint: BasePlugin
     {
         public const string AUTHOR = "Inas";
-        public const string PLUGIN_NAME = "EOSExt.SecuritySensor";
-        public const string VERSION = "1.1.6";
+        public const string PLUGIN_NAME = "EOSExt.SecDoor";
+        public const string VERSION = "1.0.0";
 
         private Harmony m_Harmony;
 
         public override void Load()
         {
             SetupManagers();
-            AssetAPI.OnAssetBundlesLoaded += Assets.Init;
 
-            m_Harmony = new Harmony("EOSExt.SecuritySensor");
+            m_Harmony = new Harmony("EOSExt.SecDoor");
             m_Harmony.PatchAll();
 
-            ClassInjector.RegisterTypeInIl2Cpp<SensorCollider>();
-            EOSLogger.Log("ExtraObjectiveSetup.SecuritySensor loaded.");
+            EOSLogger.Log("ExtraObjectiveSetup.SecDoor loaded.");
         }
 
         /// <summary>
@@ -41,7 +37,7 @@ namespace EOSExt.SecuritySensor
         /// </summary>
         private void SetupManagers()
         {
-            SecuritySensorManager.Current.Init();
+            SecDoorIntTextOverrideManager.Current.Init();
         }
     }
 }
