@@ -5,19 +5,17 @@ using ExtraObjectiveSetup.JSON;
 using GTFO.API;
 using HarmonyLib;
 
-namespace EOSExt.SecDoor
+namespace ThermalSights
 {
     [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency("GTFO.FloLib", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("Inas.ExtraObjectiveSetup", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency(MTFOPartialDataUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency(InjectLibUtil.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(AUTHOR + "." + PLUGIN_NAME, PLUGIN_NAME, VERSION)]
     
     public class EntryPoint: BasePlugin
     {
         public const string AUTHOR = "Inas";
-        public const string PLUGIN_NAME = "EOSExt.SecDoor";
+        public const string PLUGIN_NAME = "ThermalSights";
         public const string VERSION = "1.0.0";
 
         private Harmony m_Harmony;
@@ -26,10 +24,10 @@ namespace EOSExt.SecDoor
         {
             SetupManagers();
 
-            m_Harmony = new Harmony("EOSExt.SecDoor");
+            m_Harmony = new Harmony("ThermalSights");
             m_Harmony.PatchAll();
 
-            EOSLogger.Log("ExtraObjectiveSetup.SecDoor loaded.");
+            EOSLogger.Log("ThermalSights loaded.");
         }
 
         /// <summary>
@@ -37,7 +35,7 @@ namespace EOSExt.SecDoor
         /// </summary>
         private void SetupManagers()
         {
-            SecDoorIntTextOverrideManager.Current.Init();
+
         }
     }
 }
