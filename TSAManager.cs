@@ -53,7 +53,7 @@ namespace ThermalSights
             ThermalOfflineGears.Clear();
             foreach (var b in GameDataBlockBase<PlayerOfflineGearDataBlock>.GetAllBlocks())
             {
-                if (b.name.ToLowerInvariant().EndsWith("_t"))
+                if (b.internalEnabled && b.name.ToLowerInvariant().EndsWith("_t"))
                 {
                     ThermalOfflineGears.Add(b.persistentID);
                 }
