@@ -9,17 +9,17 @@ namespace ThermalSights
 {
     public partial class TSAManager : GenericDefinitionManager<TSADefinition>
     {
-        private class PuzzleVisualWrapper
+        public class PuzzleVisualWrapper
         {
-            internal GameObject GO { get; set; }
+            public GameObject GO { get; set; }
 
-            internal Renderer Renderer { get; set; }
+            public Renderer Renderer { get; set; }
 
-            internal float Intensity { get; set; }
+            public float Intensity { get; set; }
 
-            internal float BehindWallIntensity { get; set; }
+            public float BehindWallIntensity { get; set; }
 
-            internal void SetIntensity(float t)
+            public void SetIntensity(float t)
             {
                 if (!GO.active) return;
 
@@ -34,12 +34,12 @@ namespace ThermalSights
                 }
             }
 
-            internal PuzzleVisualWrapper() { }
+            public PuzzleVisualWrapper() { }
         }
 
         private List<PuzzleVisualWrapper> PuzzleVisuals { get; } = new();
 
-        internal void RegisterPuzzleVisual(CP_Bioscan_Core core)
+        public void RegisterPuzzleVisual(CP_Bioscan_Core core)
         {
             var components = core.gameObject.GetComponentsInChildren<Renderer>(true);
 
@@ -65,6 +65,11 @@ namespace ThermalSights
             }
         }
 
+        public void RegisterPuzzleVisual(PuzzleVisualWrapper wrapper)
+        {
+            this.PuzzleVisuals.Add(wrapper);
+        }
+
         //private void AddOBSVisualRenderers()
         //{
         //    foreach (var go in EnemyTaggerSettingManager.Current.OBSVisuals)
@@ -82,7 +87,7 @@ namespace ThermalSights
         //    }
         //}
 
-        internal void SetPuzzleVisualsIntensity(float t)
+        public void SetPuzzleVisualsIntensity(float t)
         {
             PuzzleVisuals.ForEach(v => v.SetIntensity(t));
         }
