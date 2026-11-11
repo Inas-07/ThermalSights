@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using ExtraObjectiveSetup.Utils;
+using ExtraObjectiveSetup.JSON;
 using ExtraObjectiveSetup.JSON.MTFOPartialData;
 using GTFO.API;
 using HarmonyLib;
